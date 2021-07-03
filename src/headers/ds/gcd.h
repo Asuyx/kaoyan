@@ -2,6 +2,9 @@
 // 输入：正整数a、b
 // 输出：a和b的最大公因数
 
+#ifndef GCD_H
+#define GCD_H
+
 class Gcd {
 protected:
     virtual int gcd(int, int) { return 0; }
@@ -23,3 +26,5 @@ public:
         }
     }
 };
+
+#endif

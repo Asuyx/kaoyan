@@ -2,6 +2,9 @@
 // 输入：正整数a、b
 // 输出：a的b次幂
 
+#ifndef POWER_H
+#define POWER_H
+
 class Power {
 protected:
     virtual int power(int, int) { return 0; }
@@ -27,3 +30,5 @@ public:
         }
     }
 };
+
+#endif
