@@ -11,17 +11,29 @@ using namespace std;
 typedef int Rank;
 
 // 默认的扩容策略（加倍扩容）
-static int expandBy2(int m) {
+inline static int expandBy2(int m) {
     return m << 1;
 }
 
+// 默认的缩容策略（减半缩容，缩容阈值25%）
+inline static int shrinkBy2(int m, int n) {
+    if (n < m >> 2) {
+        return m >> 1;
+    } else {
+        return m;
+    }
+}
+
+// 设置默认的扩容、缩容策略
+static function<int(int)> default_expand_strategy = expandBy2;
+static function<int(int,int)> default_shrink_strategy = shrinkBy2;
+
+// 向量的模板定义开始
 template <typename T>
 class Vector {
     T* _data;      // 向量所基于的数组
     int _capacity; // 向量的容量
     int _size;     // 向量的规模
-
-    static function<int(int)> capacity_expand_strategy = expandBy2; // 向量扩容的默认方法
 
 public:
     int capacity() { return _capacity; }
@@ -37,17 +49,29 @@ public:
 
     template <typename T1> friend ostream& operator<< (ostream& out, const Vector<T1>& V); // 使用cout方式打印
 
+    void push_back(T e); // 在尾部插入元素
+    void pop_back();  // 删除尾部的元素
+
     // -----------------------------------以下开始是示例代码的函数---------------------------
     // 循秩访问
-    T& operator[](int index) {
+    T& operator[](Rank index) {
         return _data[index];
     }
 
     void set_capacity(int new_capacity); // 算法2.1（向量扩容）
     void expand(function<int(int)> strategy = nullptr); // 向量自动扩容
+    void shrink(function<int(int,int)> strategy = nullptr); // 向量自动缩容
 
     void insert(T e, Rank r); // 算法2.2A - 向量插入元素
-    void insert(const Vector<T>& V, Rank r); // 算法2.3A - 向量合并
+    void insert(const Vector<T>& V, Rank r); // 算法2.3A - 向量批量插入元素
+    void remove(Rank r);      // 算法2.4A - 向量删除元素
+    void remove(Rank r1, Rank r2); // 向量批量删除元素（正文中未给出）
+
+    Rank find(T e); // 算法2.5A - 向量查找元素
+    Rank find(function<bool(Rank, const T&)> filter); // 向量查找元素（按条件）（正文中未给出）
+    void traverse(function<void(Rank, T&)> visit); // 算法2.6A - 向量遍历
+    Vector<Rank> findAll(function<bool(Rank, const T&)> filter); // 算法2.6B - 批量查找
+    void removeAll(function<bool(Rank, const T&)> filter); // 算法2.7 - 向量批量删除元素（按条件）
 };
 
 // 算法2.1A（改变向量的容量）
@@ -64,9 +88,21 @@ void Vector<T>::set_capacity(int new_capacity) {
 template <typename T>
 void Vector<T>::expand(function<int(int)> strategy) {
     if (strategy == nullptr) {
-        strategy = capacity_expand_strategy;
+        strategy = default_expand_strategy;
     }
     set_capacity(strategy(_capacity));
+}
+
+// 缩容框架（在笔记正文省略）
+template <typename T>
+void Vector<T>::shrink(function<int(int,int)> strategy) {
+    if (strategy == nullptr) {
+        strategy = default_shrink_strategy;
+    }
+    int new_capacity = strategy(_capacity, _size);
+    if (new_capacity < _capacity) {
+        set_capacity(new_capacity);
+    }
 }
 
 // 算法2.2A - 向量插入元素（单元）
@@ -85,12 +121,149 @@ void Vector<T>::insert(const Vector<T>& V, Rank r) {
     if (r < 0) { r = _size - r; } // 仿Python的记法，如果r是负数，从后向前计数
     int new_size = _size + V._size;                   // 计算插入之后的向量规模
     if (new_size > _capacity) { expand([=](int m) -> int {
-        return max(new_size, capacity_expand_strategy(m));
-    }); }        // 插入后会超出容量，需要扩容。这里省略指定的capacity_expand_strategy
+        return max(new_size, default_expand_strategy(m));
+    }); }        // 插入后会超出容量，需要扩容。这里省略指定的default_expand_strategy
     arrayCopy(_data+r+V._size, _data+r, _size-r, -1); // 从后向前，依次移动V[r:n]中的每个元素
     arrayCopy(_data+r, V._data, V._size);             // 依次插入V1中的元素
     _size = new_size; // 更新向量的规模
 }
+
+// 算法2.4A - 向量删除元素（单元）
+template<typename T>
+void Vector<T>::remove(Rank r) {
+    if (r < 0) { r = _size - r; } // 仿Python的记法，如果r是负数，从后向前计数
+    arrayCopy(_data+r, _data+r+1, _size-r-1); // 这里可以从前向后依次前移
+    --_size;  // 更新向量的规模
+    shrink(); // 如果有必要，则缩容
+}
+
+// 向量删除元素（批量）
+template <typename T>
+void Vector<T>::remove(Rank r1, Rank r2) {
+    if (r1 < 0) { r1 = _size - r1; }
+    if (r2 < 0) { r2 = _size - r2; }
+    if (r1 > r2) { swap(r1, r2); } // 保证r1 <= r2
+    arrayCopy(_data+r1, _data+r2, _size-r2); // 类似单元素删除的前移
+    _size -= r2 - r1; // 更新向量的规模
+    shrink();         // 如果有必要，则缩容
+}
+
+// 算法2.5A - 向量查找元素（单元）
+template<typename T>
+Rank Vector<T>::find(T e) {
+    for (Rank i = 0; i < _size; ++i) { // 检测每个元素是否等于e
+        if (_data[i] == e) {
+            return i;                 // 如果相等则返回秩
+        }
+    }
+    return -1;                        // e不在向量中，返回-1
+}
+
+// 向量查找元素（单元）（按条件）
+template <typename T>
+Rank Vector<T>::find(function<bool(Rank, const T&)> filter) {
+    for (Rank i = 0; i < _size; ++i) {
+        if (filter(i, _data[i])) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+// 算法2.6A - 向量遍历（顺序遍历）
+template<typename T>
+void Vector<T>::traverse(function<void(Rank, T&)> visit) {
+    for (Rank i = 0; i < _size; ++i) {
+        visit(i, _data[i]);
+    }
+}
+
+// 算法2.6B - 批量查找
+template <typename T>
+Vector<Rank> Vector<T>::findAll(function<bool(Rank, const T&)> filter) {
+    Vector<Rank> temp;
+    traverse([&temp](Rank index, const T& e) -> void {
+        if (filter(index, e)) {
+            temp.push_back(index);
+        }
+    });
+    return temp;
+}
+
+#define ALGORITHM_2_7_C_2
+
+#ifdef ALGORITHM_2_7_A
+// 算法2.7A（逐个查找-逐个删除）
+template <typename T>
+void Vector<T>::removeAll(function<bool(Rank, const T&)> filter) {
+    Rank index;
+    while ((index = find(filter)) >= 0) {
+        remove(index);
+    }
+}
+#endif
+#ifdef ALGORITHM_2_7_B
+// 算法2.7B（一次查找-逐个删除）
+template <typename T>
+void Vector<T>::removeAll(function<bool(Rank, const T&)> filter) {
+    for (Rank i = 0; i < _size; ) {
+        if (filter(i, _data[i])) {
+            remove(i);
+        } else {
+            ++i; // 注意，如果remove了则不需要++i，否则会跳过1个元素
+        }
+    }
+}
+#endif
+#ifdef ALGORITHM_2_7_B_2
+// 算法2.7B2（一次查找-逐个删除，使用findAll）（正文中未给出）
+template <typename T>
+void Vector<T>::removeAll(function<bool(Rank, const T&)> filter) {
+    auto indexes = findAll(filter);
+    for (int i = 0; i < indexes._size; ++i) {
+        remove(indexes[i] - i); // 注意删除之后的下标和findAll出的下标会差一个i
+    }
+}
+#endif
+#ifdef ALGORITHM_2_7_C
+// 算法2.7C（一次查找-一次删除）
+template <typename T>
+void Vector<T>::removeAll(function<bool(Rank, const T&)> filter) {
+    int k = 0;      // 用来记录偏移量，即V[0:i]中满足filter的数量
+    for (Rank i = 0; i < _size; ++i) {
+        if (filter(i, _data[i])) {
+            ++k;    // 满足filter条件，记录偏移量
+        } else {
+            _data[i-k] = _data[i]; // 不满足filter，移动元素
+        }
+    }
+    _size -= k;     // 直接缩减_size抛弃掉末尾的元素
+    shrink();       // 如果有必要，则缩容
+}
+#endif
+#ifdef ALGORITHM_2_7_C_2
+// 算法2.7C2（一次查找-一次删除，去掉无意义赋值）（正文中未给出）
+template <typename T>
+void Vector<T>::removeAll(function<bool(Rank, const T&)> filter) {
+    Rank i = 0;
+    for (; i < _size; ++i) {
+        if (filter(i, _data[i])) {
+            break;  // 找到第1个满足filter的点，此前是不需要移动元素的
+        }
+    }
+    if (i == _size) { return; }    // 全部不满足filter，直接返回
+    int k = 1;      // 用来记录偏移量，即V[0:i]中满足filter的数量
+    for (++i; i < _size; ++i) {
+        if (filter(i, _data[i])) {
+            ++k;    // 满足filter条件，记录偏移量
+        } else {
+            _data[i-k] = _data[i]; // 不满足filter，移动元素
+        }
+    }
+    _size -= k;     // 直接缩减_size抛弃掉末尾的元素
+    shrink();       // 如果有必要，则缩容
+}
+#endif
 
 //  ----------------------------------以下内容不在笔记正文中----------------------------
 
@@ -146,6 +319,16 @@ Vector<int> range(int start, int stop, int step=1) {
     return Vector<int>(size, size, [=](int index) -> int { 
         return start + index * step;
     });
+}
+
+template <typename T>
+void Vector<T>::push_back(T e) {
+    insert(e, _size);
+}
+
+template <typename T>
+void Vector<T>::pop_back() {
+    remove(_size-1);
 }
 
 #endif
