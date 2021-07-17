@@ -53,7 +53,7 @@ public:
     template <typename T1> friend ostream& operator<< (ostream& out, const Vector<T1>& V); // 使用cout方式打印
 
     void push_back(T e); // 在尾部插入元素
-    void pop_back();  // 删除尾部的元素
+    T pop_back();  // 删除尾部的元素
 
     // -----------------------------------以下开始是示例代码的函数---------------------------
     // 循秩访问
@@ -383,10 +383,10 @@ template <typename T>
 ostream& operator<< (ostream& out, const Vector<T>& V)
 {
     out << "[";
-    for (int i = 0; i < V._size; ++i) {
-        if (i > 0) { out << ","; }
-        out << V._data[i];
-    }
+    V.traverse([](Rank r, T& e) -> void {
+        if (r > 0) { out <<","; }
+        out << e;
+    });
     out << "]";
 }
 
@@ -405,8 +405,10 @@ void Vector<T>::push_back(T e) {
 }
 
 template <typename T>
-void Vector<T>::pop_back() {
+T Vector<T>::pop_back() {
+    T temp = _data[_size-1];
     remove(_size-1);
+    return temp;
 }
 
 #endif
