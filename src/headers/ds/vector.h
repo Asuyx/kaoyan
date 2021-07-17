@@ -6,6 +6,8 @@
 #include <iostream>
 #include <functional>
 #include "utility.h"
+#include "sort.h"
+#include "search.h"
 using namespace std;
 
 typedef int Rank;
@@ -38,6 +40,7 @@ class Vector {
 public:
     int capacity() { return _capacity; }
     int size() { return _size; }
+    T* data() { return _data; }
 
     // ----------------------------------以下内容不在笔记正文中----------------------------
 
@@ -72,6 +75,16 @@ public:
     void traverse(function<void(Rank, T&)> visit); // 算法2.6A - 向量遍历
     Vector<Rank> findAll(function<bool(Rank, const T&)> filter); // 算法2.6B - 批量查找
     void removeAll(function<bool(Rank, const T&)> filter); // 算法2.7 - 向量批量删除元素（按条件）
+
+    void shuffle();    // 算法2.8 - 随机置乱
+    void mergeSort(function<bool(const T&, const T&)> cmp);  // 算法2.9 - 归并排序
+    void mergeSort();  // 重载函数，用默认<=
+
+    Rank binarySearch(T e, function<bool(const T&, const T&)> cmp); // 算法2.10 - 折半查找
+    Rank binarySearch(T e); // 重载函数，用默认<=
+
+    void duplicate();  // 算法2.11A - 无序唯一化
+    void duplicateSorted(); // 算法2.11B - 有序唯一化
 };
 
 // 算法2.1A（改变向量的容量）
@@ -264,6 +277,71 @@ void Vector<T>::removeAll(function<bool(Rank, const T&)> filter) {
     shrink();       // 如果有必要，则缩容
 }
 #endif
+
+// 算法2.8A - 随机置乱
+template <typename T>
+void Vector<T>::shuffle() {
+    for (Rank i = _size; i > 0; --i) {
+        swap(_data[i-1], _data[rand() % i]);
+    }
+}
+
+// 算法2.9A - 归并排序
+template <typename T>
+void Vector<T>::mergeSort(function<bool(const T&, const T&)> cmp) {
+    MergeSort<T> sort;
+    sort(_data, _size, cmp);
+}
+
+template <typename T>
+void Vector<T>::mergeSort() {
+    mergeSort(less_equal<T>());
+}
+
+// 算法2.10A - 折半查找
+template <typename T>
+Rank Vector<T>::binarySearch(T e, function<bool(const T&, const T&)> cmp) {
+    BinarySearch<T> search;
+    return search(_data, _size, e, cmp);
+}
+
+template <typename T>
+Rank Vector<T>::binarySearch(T e) {
+    return binarySearch(e, less_equal<T>());
+}
+
+// 算法2.11A - 无序向量唯一化
+template <typename T>
+void Vector<T>::duplicate() {
+    Rank i = 1, k = 1;                  // 快指针i检索，慢指针k填充
+    while (i < _size) {                 // V[0:k]始终是V[0:i]唯一化后的结果
+        bool existInPrefix = false;     // 要判断V[i]是否在V[0:i]中
+        for (Rank j = 0; j < k; ++j) {  // 只需要判断是否在V[0:k]中即可
+            if (_data[i] == _data[j]) {
+                existInPrefix = true; break;
+            }
+        }
+        if (existInPrefix) {            // 如果V[i]不在它的前缀中
+            _data[k++] = _data[i++];    // 移动元素，并同时移动快慢指针
+        } else { ++i; }                 // 否则只需要移动快指针
+    }
+    _size = k;                          // 修改规模，和慢指针对齐
+    shrink();                           // 如果有必要，则缩容
+}
+
+// 算法2.11B - 有序向量唯一化
+template <typename T>
+void Vector<T>::duplicateSorted() {
+    Rank i = 1, k = 1;                  // 快指针i检索，慢指针k填充
+    while (i < _size) {                 // V[0:k]始终是V[0:i]唯一化后的结果
+        bool existInPrefix = _data[i] == _data[k-1];  // 改进后的计算方法
+        if (existInPrefix) {            // 如果V[i]不在它的前缀中
+            _data[k++] = _data[i++];    // 移动元素，并同时移动快慢指针
+        } else { ++i; }                 // 否则只需要移动快指针
+    }
+    _size = k;                          // 修改规模，和慢指针对齐
+    shrink();                           // 如果有必要，则缩容
+}
 
 //  ----------------------------------以下内容不在笔记正文中----------------------------
 

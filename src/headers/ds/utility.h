@@ -36,5 +36,12 @@ int goldenSection(int lo, int hi) {
     return lo + (hi - lo) >> 2 + (hi - lo) >> 3;
 }
 
+// 倒置数组
+template <typename T>
+void reverse(T* A, int n) {
+    for (int i = 0; i < n/2; ++i) {
+        swap(A[i],A[n-1-i]);
+    }
+}
 
 #endif
