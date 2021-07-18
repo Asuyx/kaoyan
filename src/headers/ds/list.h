@@ -84,17 +84,11 @@ List<T>::List() {
 
 template <typename T>
 ListNode<T>* List<T>::operator[](Rank index) {
-    ListNode<T>* p = nullptr;
     if (index <= _size / 2) {
-        for (p = _head; index >= 0; --index) {
-            p = p->succ;
-        }
+        return _head->forward(index+1);
     } else {
-        for (p = _tail; index < _size; ++index) {
-            p = p->pred;
-        }
+        return _tail->backward(_size-index);
     }
-    return p;
 }
 
 // 算法2.13A
@@ -228,7 +222,7 @@ T List<T>::pop_back() {
 
 template <typename T>
 T List<T>::pop_front() {
-    auto p = _pred->succ;
+    auto p = _head->succ;
     T temp = p->value;
     remove(p);
     return temp;
