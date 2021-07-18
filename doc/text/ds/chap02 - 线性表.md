@@ -1403,6 +1403,8 @@ void StaticList<T>::remove(Rank r) {
 
 现实中用到的线性表，可能既需要在任意位置插入或删除元素，又需要对给定的秩随机访问。在这种情况下，无论使用顺序结构还是链式结构，都会面临对于其中一些操作效率很低的问题。因此会希望构造一个折中方案。
 
+> 分块表这个章节在清华大学《数据结构》本科教材中是没有的，但不排除被拿来出题；另一些教材会简要介绍这部分内容。但总而言之，这个章节在考研中不是那么重要。因此，笔者只对它做简单介绍，读者也可以选择略读。
+
 ### 分块结构
 
 这一节介绍的**分块结构**是一个经典的折中方案，它通过对<u>顺序结构和链式结构的复合</u>，实现了一定程度的效率折中。
@@ -1490,7 +1492,7 @@ void ListList<T>::buildL1() {
 // 算法2.18A
 template <typename T>
 ListNode<T>* ListList<T>::operator[](Rank index) {
-    auto p1 = L1[1], p2 = p1->succ;
+    auto p1 = L1[0], p2 = p1->succ;
     while (p2 != L1.tail() && p2.r <= index) {
         p2 = (p1 = p2)->succ;
     }
@@ -1526,7 +1528,7 @@ ListNode<T>* ListList<T>::operator[](Rank index) {
 // 算法2.19A
 template <typename T>
 void ListList<T>::insert(T e, Rank r) {
-    auto p1 = L1[1], p2 = p1->succ;             // 通过循秩访问先找到位置
+    auto p1 = L1[0], p2 = p1->succ;             // 通过循秩访问先找到位置
     while (p2 != L1.tail() && p2.r <= r) {
         p2 = (p1 = p2)->succ;
     }
@@ -1539,8 +1541,8 @@ void ListList<T>::insert(T e, Rank r) {
 }
 ```
 
-> 在删除的时候会遇到一个问题：如果索引指向了被删除的节点怎么办？
->
+> 上面的实现在空表插入第一个节点的时候会发生错误（`L1[0]`没有定义）。请您对**算法2.19A**进行修改，以规避该错误。
+
 > 一个简单的思路是：直接删掉指向它的那个索引。当然，这会导致有两个索引之间的距离变成了$2\sqrt n$；如果被删掉的索引太多，则分块表和平方根规则的距离也会过大，使其无法保证循秩操作在$O(\sqrt n)$时间内完成。
 >
 > 要维护分块表和平方根规则的距离不至于过大，需要时不时重构索引表，这在下一小节会讨论。
@@ -1606,7 +1608,7 @@ template <typename T>
 void ListList<T>::globalReconstruct() {
     int sqrt_n = (int)floor(sqrt(L2.size()));
     if (L1.size() > k2*sqrt_n) {                  // 判断是否需要重构
-        auto p = L1[1];
+        auto p = L1[0];
         while (p->succ->succ != L1.tail()) {      // 逐个判断，是否需要删除p->succ
             if (p->succ->succ->value.r - p1->value.r <= sqrt_n) {
                 L1.remove(p->succ);               // 满足条件，删除p->succ

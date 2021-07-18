@@ -33,6 +33,8 @@ public:
 
     void traverse(function<void(ListNode<T>*)> visit); // 遍历
 
+    template <typename T1> friend ostream& operator<< (ostream& out, const ListList<T1>& L); // 使用cout方式打印
+
     ListNode<T>* find(T e); // 列表查找元素
 
     // -----------------------------------以下开始是示例代码的函数---------------------------
@@ -74,7 +76,7 @@ void ListList<T>::buildL1() {
 // 算法2.18A
 template <typename T>
 ListNode<T>* ListList<T>::operator[](Rank index) {
-    auto p1 = L1[1], p2 = p1->succ;
+    auto p1 = L1[0], p2 = p1->succ;
     while (p2 != L1.tail() && p2.r <= index) {
         p2 = (p1 = p2)->succ;
     }
@@ -87,7 +89,7 @@ template <typename T>
 ListNode<T>* ListList<T>::operator[](Rank index) {
     ListNode<T>* p1, * p2;                       // p2保持为p1->succ，将L2[r]定位到p1和p2之间
     if (index <= size() / 2) {                   // 如果r <= n/2，就从左边遍历索引表
-        p1 = L1[1], p2 = p1->succ;
+        p1 = L1[0], p2 = p1->succ;
         while (p2 != L1.tail() && p2.r <= index) {
             p2 = (p1 = p2)->succ;
         }
@@ -109,12 +111,19 @@ ListNode<T>* ListList<T>::operator[](Rank index) {
 // 算法2.19A
 template <typename T>
 void ListList<T>::insert(T e, Rank r) {
-    auto p1 = L1[1], p2 = p1->succ;             // 通过循秩访问先找到位置
+    if (L2.size() == 0) {                       // 空表特判
+        L1.push_back(IndexNode<T>());   
+    }
+    auto p1 = L1[0], p2 = p1->succ;             // 通过循秩访问先找到位置
     while (p2 != L1.tail() && p2.r <= r) {
         p2 = (p1 = p2)->succ;
     }
     auto p = p1->value.p->forward(r - p1->value.r); // 当前的L[r]（可能是tail）
     L2.insertAsPred(p, e);                      // 将e插入到L[r]的位置上
+    if (L2.size() == 1) {                       // 空表特判
+        p->value.r = 0;
+        p->value.p = p->pred;
+    }
     while (p2 != L1.tail()) {                   // 被插入位置之后的索引，需要将秩+1
         ++p2->value.r;
         p2 = p2->succ;
@@ -124,7 +133,7 @@ void ListList<T>::insert(T e, Rank r) {
 
 template <typename T>
 void ListList<T>::remove(Rank r) {
-    auto p1 = L1[1], p2 = p1->succ;             // 通过循秩访问先找到位置
+    auto p1 = L1[0], p2 = p1->succ;             // 通过循秩访问先找到位置
     while (p2 != L1.tail() && p2.r <= r) {
         p2 = (p1 = p2)->succ;
     }
@@ -133,7 +142,9 @@ void ListList<T>::remove(Rank r) {
         if (p2 != L1.tail() && p2->value.r == r+1) { // 如果p1和p2之间只有p一个节点
             L1.remove(p1);                      // 就直接将p1删除
         } else {                                // 否则，选择将这个索引向后移动1个节点
-            p1->value.p = p->succ;
+            if ((p1->value.p = p->succ) == L2.tail()) { // 移动后如果到达tail，则也将p1删除
+                L1.remove(p1);
+            }
         }
     }
     L2.remove(p);
@@ -165,7 +176,7 @@ template <typename T>
 void ListList<T>::globalReconstruct() {
     int sqrt_n = (int)floor(sqrt(L2.size()));
     if (L1.size() > k2*sqrt_n) {                  // 判断是否需要重构
-        auto p = L1[1];
+        auto p = L1[0];
         while (p->succ->succ != L1.tail()) {      // 逐个判断，是否需要删除p->succ
             if (p->succ->succ->value.r - p1->value.r <= sqrt_n) {
                 L1.remove(p->succ);               // 满足条件，删除p->succ
@@ -191,6 +202,24 @@ void ListList<T>::traverse(function<void(ListNode<T>*)> visit) {
 template <typename T>
 ListNode<T>* ListList<T>::find(T e) {
     return L2.find(e);
+}
+
+template <typename T>
+ostream& operator<< (ostream& out, const ListList<T>& L)
+{
+    out << "LL(";
+    if (L2.size() > 0) {
+        auto p1 = L1[0];     // 索引节点
+        L2.traverse([=, &p1](ListNode<T>* p) -> {
+            if (p != L2.head()->succ) { out <<","; }
+            if (p1 != L1.tail() && p == p1->value.p) {
+                out << "*";  // 有索引的节点打上*号
+                p1 = p1->succ;
+            }
+            out << p->value;
+        });
+    }
+    out << ")";
 }
 
 #endif
