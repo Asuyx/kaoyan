@@ -3,14 +3,6 @@
 #ifndef UTILITY_H
 #define UTILITY_H
 
-// 交换两个元素
-template <typename T>
-void swap(T& a, T& b) {
-    T temp = a;
-    a = b;
-    b = temp;
-}
-
 // 复制数组 dst[0:size:step] = src[0:size:step]
 template <typename T>
 void arrayCopy(T* dst, T* src, int size, int step = 1) {

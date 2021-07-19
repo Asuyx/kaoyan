@@ -38,9 +38,9 @@ class Vector {
     int _size;     // 向量的规模
 
 public:
-    int capacity() { return _capacity; }
-    int size() { return _size; }
-    T* data() { return _data; }
+    int capacity() const { return _capacity; }
+    int size() const { return _size; }
+    T* data() const { return _data; }
 
     // ----------------------------------以下内容不在笔记正文中----------------------------
 
@@ -57,7 +57,7 @@ public:
 
     // -----------------------------------以下开始是示例代码的函数---------------------------
     // 循秩访问
-    T& operator[](Rank index) {
+    T& operator[](Rank index) const {
         return _data[index];
     }
 
@@ -70,18 +70,18 @@ public:
     void remove(Rank r);      // 算法2.4A - 向量删除元素
     void remove(Rank r1, Rank r2); // 向量批量删除元素（正文中未给出）
 
-    Rank find(T e); // 算法2.5A - 向量查找元素
-    Rank find(function<bool(Rank, const T&)> filter); // 向量查找元素（按条件）（正文中未给出）
+    Rank find(T e) const; // 算法2.5A - 向量查找元素
+    Rank find(function<bool(Rank, const T&)> filter) const; // 向量查找元素（按条件）（正文中未给出）
     void traverse(function<void(Rank, T&)> visit); // 算法2.6A - 向量遍历
-    Vector<Rank> findAll(function<bool(Rank, const T&)> filter); // 算法2.6B - 批量查找
+    Vector<Rank> findAll(function<bool(Rank, const T&)> filter) const; // 算法2.6B - 批量查找
     void removeAll(function<bool(Rank, const T&)> filter); // 算法2.7 - 向量批量删除元素（按条件）
 
     void shuffle();    // 算法2.8 - 随机置乱
     void mergeSort(function<bool(const T&, const T&)> cmp);  // 算法2.9 - 归并排序
     void mergeSort();  // 重载函数，用默认<=
 
-    Rank binarySearch(T e, function<bool(const T&, const T&)> cmp); // 算法2.10 - 折半查找
-    Rank binarySearch(T e); // 重载函数，用默认<=
+    Rank binarySearch(T e, function<bool(const T&, const T&)> cmp) const; // 算法2.10 - 折半查找
+    Rank binarySearch(T e) const; // 重载函数，用默认<=
 
     void duplicate();  // 算法2.11A - 无序唯一化
     void duplicateSorted(); // 算法2.11B - 有序唯一化
@@ -163,7 +163,7 @@ void Vector<T>::remove(Rank r1, Rank r2) {
 
 // 算法2.5A - 向量查找元素（单元）
 template<typename T>
-Rank Vector<T>::find(T e) {
+Rank Vector<T>::find(T e) const {
     for (Rank i = 0; i < _size; ++i) { // 检测每个元素是否等于e
         if (_data[i] == e) {
             return i;                 // 如果相等则返回秩
@@ -174,7 +174,7 @@ Rank Vector<T>::find(T e) {
 
 // 向量查找元素（单元）（按条件）
 template <typename T>
-Rank Vector<T>::find(function<bool(Rank, const T&)> filter) {
+Rank Vector<T>::find(function<bool(Rank, const T&)> filter) const {
     for (Rank i = 0; i < _size; ++i) {
         if (filter(i, _data[i])) {
             return i;
@@ -193,9 +193,9 @@ void Vector<T>::traverse(function<void(Rank, T&)> visit) {
 
 // 算法2.6B - 批量查找
 template <typename T>
-Vector<Rank> Vector<T>::findAll(function<bool(Rank, const T&)> filter) {
+Vector<Rank> Vector<T>::findAll(function<bool(Rank, const T&)> filter) const {
     Vector<Rank> temp;
-    traverse([&temp](Rank index, const T& e) -> void {
+    traverse([=, &temp](Rank index, const T& e) -> void {
         if (filter(index, e)) {
             temp.push_back(index);
         }
@@ -300,13 +300,13 @@ void Vector<T>::mergeSort() {
 
 // 算法2.10A - 折半查找
 template <typename T>
-Rank Vector<T>::binarySearch(T e, function<bool(const T&, const T&)> cmp) {
+Rank Vector<T>::binarySearch(T e, function<bool(const T&, const T&)> cmp) const {
     BinarySearch<T> search;
     return search(_data, _size, e, cmp);
 }
 
 template <typename T>
-Rank Vector<T>::binarySearch(T e) {
+Rank Vector<T>::binarySearch(T e) const {
     return binarySearch(e, less_equal<T>());
 }
 
@@ -383,10 +383,10 @@ template <typename T>
 ostream& operator<< (ostream& out, const Vector<T>& V)
 {
     out << "[";
-    V.traverse([](Rank r, T& e) -> void {
-        if (r > 0) { out <<","; }
-        out << e;
-    });
+    for (Rank r = 0; r < V.size(); ++r) {
+    	if (r > 0) { out <<","; }
+        out << V[r];
+	}
     out << "]";
 }
 

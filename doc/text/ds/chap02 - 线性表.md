@@ -136,13 +136,13 @@ void Vector<T>::expand(function<int(int)> strategy) {
 // 算法2.1B1 - 固定扩容
 template<typename T>
 void expandByAP(const Vector<T>& V, int d) {
-    V.expand([=](int m) -> { return m + d; });
+    V.expand([=](int m) -> int { return m + d; });
 }
 
 // 算法2.1B2 - 比例扩容
 template<typename T>
 void expandByGP(const Vector<T>& V, double q) {
-    V.expand([=](int m) -> { return (int)(m * q); });
+    V.expand([=](int m) -> int { return (int)(m * q); });
 }
 ```
 
@@ -412,7 +412,7 @@ void Vector<T>::traverse(function<void(Rank, T&)> visit) {
 template <typename T>
 Vector<Rank> Vector<T>::findAll(function<bool(Rank, const T&)> filter) {
     Vector<Rank> temp;
-    traverse([&temp](Rank index, const T& e) -> void {
+    traverse([=, &temp](Rank index, const T& e) -> void {
         if (filter(index, e)) {
             temp.push_back(index);
         }
