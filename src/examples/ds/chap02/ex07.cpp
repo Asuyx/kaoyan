@@ -1,4 +1,4 @@
-// 问题2.12 - 循环位移
+// 例2.7 - 问题2.12 - 循环位移
 // 给定：向量V[0:n]，位移量k（0<k<n）
 // 要求：将向量V循环左移k个单位
 
@@ -17,11 +17,12 @@ void cyclicLeftShiftA(const Vector<T>& V, int k) {
     arrayCopy(B, A, k);     // B[0:k] = V[0:k]
     arrayCopy(A, A+k, n-k); // V[0:n-k] = V[k:n]
     arrayCopy(A+n-k, B, k); // V[n-k:n] = B[0:k]
+    delete[] B;
 }
 
 // 算法2.12B
 template<typename T>
-void cyclicRightShiftB(const Vector<T>& V, int k) {
+void cyclicLeftShiftB(const Vector<T>& V, int k) {
     auto A = V.data(), n = V.size();
     int d = gcd(n, k), n1 = n / d;      // 计算最大公约数
     T temp;                             // 辅助空间
@@ -36,7 +37,7 @@ void cyclicRightShiftB(const Vector<T>& V, int k) {
 
 // 算法2.12B2（将i+j*k作为循环变量，正文中未给出）
 template<typename T>
-void cyclicRightShiftB2(const Vector<T>& V, int k) {
+void cyclicLeftShiftB2(const Vector<T>& V, int k) {
     auto A = V.data(), n = V.size();
     int d = gcd(n, k), n1 = n / d;      // 计算最大公约数
     T temp;                             // 辅助空间
@@ -53,13 +54,29 @@ void cyclicRightShiftB2(const Vector<T>& V, int k) {
 
 // 算法2.12C
 template <typename T>
-void cyclicRightShiftC(const Vector<T>& V, int k) {
+void cyclicLeftShiftC(const Vector<T>& V, int k) {
     auto A = V.data(), n = V.size();
     reverse(A, k);   // -> rV[0:k] + V[k:n]
     reverse(A, n);   // -> rV[k:n] + V[0:k]
     reverse(A, n-k); // -> V[k:n] + V[0:k]
 }
 
+const int n = 12;
+const int k = 9;
+
 int main() {
+    auto V = range(1, 1+n);
+    auto printV = [&V]() -> void {
+        cout << "V   = " << V << endl;
+    };
+    printV();
+    auto testShift = [&](function<void(const Vector<int>&, int)> shift) -> void {
+        cout << "    cyclic shift(" << k << ")" << endl;
+        shift(V, k); printV();
+    };
+    testShift(cyclicLeftShiftA<int>);
+    testShift(cyclicLeftShiftB<int>);
+    testShift(cyclicLeftShiftB2<int>);
+    testShift(cyclicLeftShiftC<int>);
     return 0;
 }

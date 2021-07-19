@@ -903,7 +903,7 @@ void Vector<T>::duplicate() {
                 existInPrefix = true; break;
             }
         }
-        if (existInPrefix) {            // 如果V[i]不在它的前缀中
+        if (!existInPrefix) {           // 如果V[i]不在它的前缀中
             _data[k++] = _data[i++];    // 移动元素，并同时移动快慢指针
         } else { ++i; }                 // 否则只需要移动快指针
     }

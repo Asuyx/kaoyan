@@ -323,7 +323,7 @@ void Vector<T>::duplicate() {
                 existInPrefix = true; break;
             }
         }
-        if (existInPrefix) {            // 如果V[i]不在它的前缀中
+        if (!existInPrefix) {           // 如果V[i]不在它的前缀中
             _data[k++] = _data[i++];    // 移动元素，并同时移动快慢指针
         } else { ++i; }                 // 否则只需要移动快指针
     }
@@ -337,7 +337,7 @@ void Vector<T>::duplicateSorted() {
     Rank i = 1, k = 1;                  // 快指针i检索，慢指针k填充
     while (i < _size) {                 // V[0:k]始终是V[0:i]唯一化后的结果
         bool existInPrefix = _data[i] == _data[k-1];  // 改进后的计算方法
-        if (existInPrefix) {            // 如果V[i]不在它的前缀中
+        if (!existInPrefix) {           // 如果V[i]不在它的前缀中
             _data[k++] = _data[i++];    // 移动元素，并同时移动快慢指针
         } else { ++i; }                 // 否则只需要移动快指针
     }

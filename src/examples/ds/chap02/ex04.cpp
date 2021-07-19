@@ -20,6 +20,8 @@ int main() {
     V.shuffle(); printV();
     cout << "    sorted" << endl;
     V.mergeSort(); printV();
+    cout << "    sorted (descending)" << endl;
+    V.mergeSort(greater_equal<int>()); printV();
     // 第二部分：对一个长的随机生成的向量进行排序
     Vector<int> VL(long_size, long_size, [](Rank r) -> int {
         return rand()*rand();

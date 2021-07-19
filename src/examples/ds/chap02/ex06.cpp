@@ -93,5 +93,14 @@ int main() {
         cout << "V    = " << V << endl;
     }
 
+    // 折半查找
+    showSection(); {
+        auto V = range(1, 20, 2);
+        cout << "V    = " << V << endl;
+        for (int i : {0, 1, 7, 8, 19, 100}) {
+            cout << "find(" << i << ") : \t" << V.find(i) << "\t" << V.binarySearch(i) << endl;
+        }
+    }
+
     return 0;
 }
