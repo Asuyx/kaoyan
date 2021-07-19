@@ -135,13 +135,13 @@ void Vector<T>::expand(function<int(int)> strategy) {
 
 // 算法2.1B1 - 固定扩容
 template<typename T>
-void expandByAP(const Vector<T>& V, int d) {
+void expandByAP(Vector<T>& V, int d) {
     V.expand([=](int m) -> int { return m + d; });
 }
 
 // 算法2.1B2 - 比例扩容
 template<typename T>
-void expandByGP(const Vector<T>& V, double q) {
+void expandByGP(Vector<T>& V, double q) {
     V.expand([=](int m) -> int { return (int)(m * q); });
 }
 ```

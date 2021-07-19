@@ -3,6 +3,10 @@
 #ifndef UTILITY_H
 #define UTILITY_H
 
+#include <ctime>
+#include <functional>
+using namespace std;
+
 // 复制数组 dst[0:size:step] = src[0:size:step]
 template <typename T>
 void arrayCopy(T* dst, T* src, int size, int step = 1) {
@@ -34,6 +38,14 @@ void reverse(T* A, int n) {
     for (int i = 0; i < n/2; ++i) {
         swap(A[i],A[n-1-i]);
     }
+}
+
+double calculateTime(function<void()> f) {
+    clock_t start, end;
+    start = clock();
+    f();
+    end = clock();
+    return (double)(end - start) / CLOCKS_PER_SEC;
 }
 
 #endif

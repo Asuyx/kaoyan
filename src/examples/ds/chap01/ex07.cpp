@@ -2,6 +2,7 @@
 #include <iomanip>
 #include <cmath>
 #include <ctime>
+#include "utility.h"
 using namespace std;
 
 // 算法1.7（复杂度估计练习题）
@@ -20,16 +21,12 @@ int f1(int n) {
 }
 
 int main() {
-    clock_t start, end;
     double t, r;
     // 验证算法复杂度确实是O(n^3 * logn)
     // 用时间（纳秒）除以n^3 * logn计算比例
     // 在n充分大的时候，这个值是差不多的
     for (int n : {100, 250, 400, 700, 1000}) {
-        start = clock();
-        f1(n);
-        end = clock();
-        t = (double)(end - start) / CLOCKS_PER_SEC;
+        t = calculateTime([=]() -> void { f1(n); });
         r = t * 1e9 / (n*n*n*log2(n));
         cout << "time(" << setw(3) << n << ") = " << t << "\t";
         cout << "ratio = " << r << endl;
