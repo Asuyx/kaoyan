@@ -12,6 +12,8 @@ using namespace std;
 
 typedef int Rank;
 
+const int min_vector_capacity = 4;    // 向量的最小容量
+
 // 默认的扩容策略（加倍扩容）
 inline static int expandBy2(int m) {
     return m << 1;
@@ -20,7 +22,7 @@ inline static int expandBy2(int m) {
 // 默认的缩容策略（减半缩容，缩容阈值25%）
 inline static int shrinkBy2(int m, int n) {
     if (n < m >> 2) {
-        return m >> 1;
+        return max(m >> 1, min_vector_capacity);
     } else {
         return m;
     }
@@ -72,7 +74,7 @@ public:
 
     Rank find(T e) const; // 算法2.5A - 向量查找元素
     Rank find(function<bool(Rank, const T&)> filter) const; // 向量查找元素（按条件）（正文中未给出）
-    void traverse(function<void(Rank, T&)> visit); // 算法2.6A - 向量遍历
+    void traverse(function<void(Rank, const T&)> visit) const; // 算法2.6A - 向量遍历
     Vector<Rank> findAll(function<bool(Rank, const T&)> filter) const; // 算法2.6B - 批量查找
     void removeAll(function<bool(Rank, const T&)> filter); // 算法2.7 - 向量批量删除元素（按条件）
 
@@ -185,7 +187,7 @@ Rank Vector<T>::find(function<bool(Rank, const T&)> filter) const {
 
 // 算法2.6A - 向量遍历（顺序遍历）
 template<typename T>
-void Vector<T>::traverse(function<void(Rank, T&)> visit) {
+void Vector<T>::traverse(function<void(Rank, const T&)> visit) const {
     for (Rank i = 0; i < _size; ++i) {
         visit(i, _data[i]);
     }
@@ -347,18 +349,19 @@ void Vector<T>::duplicateSorted() {
 
 template <typename T>
 Vector<T>::Vector() {
-	_data = nullptr;
-	_size = _capacity = 0;
+	_data = new T[_capacity = min_vector_capacity];
+	_size = 0;
 }
 
 template <typename T>
 Vector<T>::Vector(int capacity) {
-	_data = new T[_capacity = capacity];
+	_data = new T[_capacity = max(min_vector_capacity, capacity)];
 	_size = 0;
 }
 
 template<typename T>
 Vector<T>::Vector(int capacity, int size, T* const data) {
+    capacity = max(min_vector_capacity, capacity);
     size = min(capacity, size);
     _data = new T[_capacity = capacity];
     arrayCopy(_data, data, _size = size);
@@ -366,6 +369,7 @@ Vector<T>::Vector(int capacity, int size, T* const data) {
 
 template<typename T>
 Vector<T>::Vector(int capacity, int size, function<T(int)> fill) {
+    capacity = max(min_vector_capacity, capacity);
     size = min(capacity, size);
     _data = new T[_capacity = capacity];
     for (_size = 0; _size < size; ++_size) {
@@ -383,10 +387,10 @@ template <typename T>
 ostream& operator<< (ostream& out, const Vector<T>& V)
 {
     out << "[";
-    for (Rank r = 0; r < V.size(); ++r) {
-    	if (r > 0) { out <<","; }
-        out << V[r];
-	}
+    V.traverse([&out](Rank r, const T& e) -> void {
+        if (r > 0) { out <<","; }
+        out << e;
+    });
     out << "]";
 }
 

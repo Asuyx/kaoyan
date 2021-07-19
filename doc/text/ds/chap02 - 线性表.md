@@ -47,9 +47,9 @@ class Vector {
     int _capacity; // 向量的容量
     int _size;     // 向量的规模
 public:
-    int capacity() { return _capacity; }
-    int size() { return _size; }
-    T* data() { return _data; }
+    int capacity() const { return _capacity; }
+    int size() const { return _size; }
+    T* data() const { return _data; }
 };
 ```
 
@@ -63,7 +63,7 @@ public:
 typedef int Rank;
 
 template <typename T>
-T& Vector<T>::operator[](Rank index) {
+T& Vector<T>::operator[](Rank index) const {
     return _data[index];
 }
 ```
