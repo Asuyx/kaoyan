@@ -10,7 +10,7 @@ using namespace std;
 template <typename T>
 class Sort {
 protected:
-    virtual void sort(T*, int, function<bool(const T&, const T&)>);
+    virtual void sort(T*, int, function<bool(const T&, const T&)>) {}
 public:
     void operator()(T* A, int n, function<bool(const T&, const T&)> cmp) {
         sort(A, n, cmp);
@@ -40,7 +40,7 @@ public:
                 A[i++] = A2[k++];
             }
         }
-        while (j < A1) {               // 如果A1还有多余元素没加入A
+        while (j < L1) {               // 如果A1还有多余元素没加入A
             A[i++] = A1[j++];          // 就将剩余元素加入A
         }
     }

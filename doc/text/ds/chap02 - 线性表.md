@@ -394,7 +394,7 @@ Rank Vector<T>::find(T e) {
 ```c++
 // 算法2.6A
 template<typename T>
-void Vector<T>::traverse(function<void(Rank, T&)> visit) {
+void Vector<T>::traverse(function<void(Rank, const T&)> visit) const {
     for (Rank i = 0; i < _size; ++i) {
         visit(i, _data[i]);
     }
@@ -410,7 +410,7 @@ void Vector<T>::traverse(function<void(Rank, T&)> visit) {
 ```c++
 // 算法2.6B
 template <typename T>
-Vector<Rank> Vector<T>::findAll(function<bool(Rank, const T&)> filter) {
+Vector<Rank> Vector<T>::findAll(function<bool(Rank, const T&)> filter) const {
     Vector<Rank> temp;
     traverse([=, &temp](Rank index, const T& e) -> void {
         if (filter(index, e)) {
@@ -660,7 +660,7 @@ void mergeSort(T* A, int n, function<bool(const T&, const T&)> cmp) {
             A[i++] = A2[k++];
         }
     }
-    while (j < A1) {               // 如果A1还有多余元素没加入A
+    while (j < L1) {               // 如果A1还有多余元素没加入A
         A[i++] = A1[j++];          // 就将剩余元素加入A
     }
 }

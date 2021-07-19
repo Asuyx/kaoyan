@@ -93,6 +93,5 @@ int main() {
         cout << "V    = " << V << endl;
     }
 
-
     return 0;
 }
