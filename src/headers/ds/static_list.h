@@ -26,19 +26,21 @@ private:
     const Rank _tail = 1;
     Vector<StaticListNode<T>> V;
 public:
-    int size() { return _size; }
-    Rank head() { return _head; }
-    Rank tail() { return _tail; }
-    StaticListNode<T>* get(Rank r) { return &V[r]; }
+    int size() const { return _size; }
+    Rank head() const { return _head; }
+    Rank tail() const { return _tail; }
+    StaticListNode<T>* get(Rank r) const { return &V[r]; }
 
     // ----------------------------------以下内容不在笔记正文中----------------------------
+    StaticList(T* A, int n); // 利用数组生成列表
+    StaticList(const Vector<T>& V); // 利用向量生成列表
     StaticList(const StaticList<T>& L); // 复制构造函数
 
-    Rank forward(Rank start, int step);
-    Rank backward(Rank start, int step);
-    Rank operator[](Rank index); // "循秩访问"
+    Rank forward(Rank start, int step) const;
+    Rank backward(Rank start, int step) const;
+    Rank operator[](Rank index) const; // "循秩访问"
 
-    void traverse(function<void(Rank)> visit); // 遍历
+    void traverse(function<void(Rank)> visit) const; // 遍历
 
     template <typename T1> friend ostream& operator<< (ostream& out, const StaticList<T1>& L); // 使用cout方式打印
 
@@ -50,10 +52,10 @@ public:
     // -----------------------------------以下开始是示例代码的函数---------------------------
     StaticList(); // 构造函数，生成空列表
     
-    void insertAsPred(Rank r, T e); // 列表插入元素（前插，正文中未给出）
-    void insertAsSucc(Rank r, T e); // 列表插入元素（后插，正文中未给出）
+    void insertAsPred(T e, Rank r); // 列表插入元素（前插，正文中未给出）
+    void insertAsSucc(T e, Rank r); // 列表插入元素（后插，正文中未给出）
     void remove(Rank r); // 列表删除元素
-    Rank find(T e); // 列表查找元素（正文中未给出）
+    Rank find(T e) const; // 列表查找元素（正文中未给出）
 };
 
 template <typename T>
@@ -66,7 +68,7 @@ StaticList<T>::StaticList() {
 }
 
 template <typename T>
-void StaticList<T>::insertAsPred(Rank r, T e) {
+void StaticList<T>::insertAsPred(T e, Rank r) {
     Rank x = V.size(), s = V[r].pred;
     V.push_back(StaticListNode<T>());
     V[x].value = e;                    // 创建新节点
@@ -76,7 +78,7 @@ void StaticList<T>::insertAsPred(Rank r, T e) {
 }
 
 template <typename T>
-void StaticList<T>::insertAsSucc(Rank r, T e) {
+void StaticList<T>::insertAsSucc(T e, Rank r) {
     Rank x = V.size(), s = V[r].succ;
     V.push_back(StaticListNode<T>());
     V[x].value = e;                    // 创建新节点
@@ -109,7 +111,7 @@ void StaticList<T>::remove(Rank r) {
 }
 
 template <typename T>
-Rank StaticList<T>::find(T e) {
+Rank StaticList<T>::find(T e) const {
     for (Rank r = V[_tail].pred; r != _head; r = V[r].pred) {
         if (V[r].value == e) { return r; }
     }
@@ -125,7 +127,7 @@ StaticList<T>::StaticList(const StaticList<T>& L) {
 }
 
 template <typename T>
-Rank StaticList<T>::forward(Rank start, int step) {
+Rank StaticList<T>::forward(Rank start, int step) const {
     for (; step > 0; --step) {
         start = V[start].succ;
     }
@@ -133,7 +135,7 @@ Rank StaticList<T>::forward(Rank start, int step) {
 }
 
 template <typename T>
-Rank StaticList<T>::backward(Rank start, int step) {
+Rank StaticList<T>::backward(Rank start, int step) const {
     for (; step > 0; --step) {
         start = V[start].pred;
     }
@@ -141,7 +143,7 @@ Rank StaticList<T>::backward(Rank start, int step) {
 }
 
 template <typename T>
-Rank StaticList<T>::operator[](Rank index) {
+Rank StaticList<T>::operator[](Rank index) const {
     if (index <= _size / 2) {
         return forward(_head, index+1);
     } else {
@@ -150,7 +152,7 @@ Rank StaticList<T>::operator[](Rank index) {
 }
 
 template <typename T>
-void StaticList<T>::traverse(function<void(Rank)> visit) {
+void StaticList<T>::traverse(function<void(Rank)> visit) const {
     for (Rank r = V[_head].succ; r != _tail; r = V[r].succ) {
         visit(r);
     } 
@@ -160,7 +162,7 @@ template <typename T>
 ostream& operator<< (ostream& out, const StaticList<T>& L)
 {
     out << "L(";
-    L.traverse([L](Rank r) -> void {
+    L.traverse([&](Rank r) -> void {
         if (r != L.V[L._head].succ) { out <<","; }
         out << L.V[r].value;
     });

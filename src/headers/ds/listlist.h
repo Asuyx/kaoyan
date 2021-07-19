@@ -31,15 +31,15 @@ public:
     ListList() { }
     ListList(const ListList<T>& L); // 复制构造函数
 
-    void traverse(function<void(ListNode<T>*)> visit); // 遍历
+    void traverse(function<void(ListNode<T>*)> visit) const; // 遍历
 
     template <typename T1> friend ostream& operator<< (ostream& out, const ListList<T1>& L); // 使用cout方式打印
 
-    ListNode<T>* find(T e); // 列表查找元素
+    ListNode<T>* find(T e) const; // 列表查找元素
 
     // -----------------------------------以下开始是示例代码的函数---------------------------
     ListList(const List<T>& L); // 用列表创建LL表
-    ListNode<T>* operator[](Rank index); // 算法2.18 - 循秩访问
+    ListNode<T>* operator[](Rank index) const; // 算法2.18 - 循秩访问
 
     void insert(T e, Rank r); // 算法2.19 - 列表插入元素
     void remove(Rank r);      // 列表删除元素（正文中未给出）
@@ -75,7 +75,7 @@ void ListList<T>::buildL1() {
 #ifdef ALGORITHM_2_18_SIMPLE
 // 算法2.18A
 template <typename T>
-ListNode<T>* ListList<T>::operator[](Rank index) {
+ListNode<T>* ListList<T>::operator[](Rank index) const {
     auto p1 = L1[0], p2 = p1->succ;
     while (p2 != L1.tail() && p2.r <= index) {
         p2 = (p1 = p2)->succ;
@@ -86,7 +86,7 @@ ListNode<T>* ListList<T>::operator[](Rank index) {
 
 // 算法2.18A2（正文中未给出）
 template <typename T>
-ListNode<T>* ListList<T>::operator[](Rank index) {
+ListNode<T>* ListList<T>::operator[](Rank index) const {
     ListNode<T>* p1, * p2;                       // p2保持为p1->succ，将L2[r]定位到p1和p2之间
     if (index <= size() / 2) {                   // 如果r <= n/2，就从左边遍历索引表
         p1 = L1[0], p2 = p1->succ;
@@ -195,12 +195,12 @@ ListList<T>::ListList(const ListList<T>& L) {
 }
 
 template <typename T>
-void ListList<T>::traverse(function<void(ListNode<T>*)> visit) {
+void ListList<T>::traverse(function<void(ListNode<T>*)> visit) const {
     L2.traverse(visit);
 }
 
 template <typename T>
-ListNode<T>* ListList<T>::find(T e) {
+ListNode<T>* ListList<T>::find(T e) const {
     return L2.find(e);
 }
 
@@ -210,7 +210,7 @@ ostream& operator<< (ostream& out, const ListList<T>& L)
     out << "LL(";
     if (L2.size() > 0) {
         auto p1 = L1[0];     // 索引节点
-        L2.traverse([=, &p1](ListNode<T>* p) -> {
+        L2.traverse([&](ListNode<T>* p) -> {
             if (p != L2.head()->succ) { out <<","; }
             if (p1 != L1.tail() && p == p1->value.p) {
                 out << "*";  // 有索引的节点打上*号

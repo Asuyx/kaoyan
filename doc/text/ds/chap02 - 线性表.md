@@ -356,7 +356,7 @@ void Vector<T>::remove(Rank r) {
 ```c++
 // 算法2.5A
 template<typename T>
-Rank Vector<T>::find(T e) {
+Rank Vector<T>::find(T e) const {
     for (Rank i = 0; i < _size; ++i) { // 检测每个元素是否等于e
         if (_data[i] == e) {
             return i;                 // 如果相等则返回秩
@@ -810,7 +810,7 @@ int binarySearch(T* A, int n, T e, function<bool(const T&, const T&)> cmp) {
 }
 
 template <typename T>
-Rank Vector<T>::binarySearch(T e, function<bool(const T&, const T&)> cmp) {
+Rank Vector<T>::binarySearch(T e, function<bool(const T&, const T&)> cmp) const {
     BinarySearch<T> search;
     return search(_data, _size, e, cmp);
 }
@@ -981,7 +981,7 @@ void cyclicLeftShiftA(const Vector<T>& V, int k) {
 ```c++
 // 算法2.12B
 template<typename T>
-void cyclicRightShiftB(const Vector<T>& V, int k) {
+void cyclicLeftShiftB(const Vector<T>& V, int k) {
     auto A = V.data(), n = V.size();
     int d = gcd(n, k), n1 = n / d;      // 计算最大公约数
     T temp;                             // 辅助空间
@@ -1001,12 +1001,12 @@ void cyclicRightShiftB(const Vector<T>& V, int k) {
 
 这一算法的时间复杂度是$\Theta(d)\cdot \Theta(n/d) = \Theta(n)$，空间复杂度降低到了$O(1)$。
 
-在很多教材上会介绍另一种解法。
+在很多教材上会介绍另一种解法（三次颠倒）。
 
 ```c++
 // 算法2.12C
 template <typename T>
-void cyclicRightShiftC(const Vector<T>& V, int k) {
+void cyclicLeftShiftC(const Vector<T>& V, int k) {
     auto A = V.data(), n = V.size();
     reverse(A, k);   // -> rV[0:k] + V[k:n]
     reverse(A, n);   // -> rV[k:n] + V[0:k]
@@ -1024,6 +1024,8 @@ void reverse(T* A, int n) {
     }
 }
 ```
+
+您可以轻易证明**算法2.12C**的正确性。
 
 容易证明，**算法2.12C**和**算法2.12B**具有相同的时间复杂度和空间复杂度。但是，**算法2.12B**的赋值次数是$d(n_1+1)=n+d\le \frac 32 n$，而**算法2.12C**的赋值次数是$\frac32 \cdot(k+n+(n-k))=3n$，所以**算法2.12B**的常数是比**算法2.12C**更小的。
 
@@ -1105,7 +1107,7 @@ List<T>::List() {
 
 ```c++
 template <typename T>
-ListNode<T>* List<T>::operator[](Rank index) {
+ListNode<T>* List<T>::operator[](Rank index) const {
     ListNode<T>* p = nullptr;
     if (index <= _size / 2) {
         for (p = _head; index >= 0; --index) {
@@ -1142,7 +1144,7 @@ ListNode<T>* List<T>::operator[](Rank index) {
 ```c++
 // 算法2.13A
 template <typename T>
-void List<T>::insertAsPred(ListNode<T>* p, T e) {
+void List<T>::insertAsPred(T e, ListNode<T>* p) {
     auto q = p->pred, x = new ListNode<T>();
     x->value = e;                   // 创建新节点
     x->pred = q; x->succ = p;       // 将新节点的链子挂在p和q之间
@@ -1164,7 +1166,7 @@ void List<T>::insertAsPred(ListNode<T>* p, T e) {
 ```c++
 // 算法2.13B（单链表前插）
 template <typename T>
-void List<T>::insertAsPred(ListNode<T>* p, T e) {
+void List<T>::insertAsPred(T e, ListNode<T>* p) {
     auto x = new ListNode<T>();
     x->value = p->value;            // 复制节点p
     x->succ = p->succ; p->succ = x; // 后插，复制得到的x当做被插节点
@@ -1222,7 +1224,7 @@ void List<T>::remove(ListNode<T>* p) {
 
 ```c++
 template <typename T>
-ListNode<T>* List<T>::find(T e) {
+ListNode<T>* List<T>::find(T e) const {
     for (auto p = _tail->pred; p != _head; p = p->pred) {
         if (p->value == e) { return p; } // 从后向前检索
     }
@@ -1240,19 +1242,20 @@ ListNode<T>* List<T>::find(T e) {
 
 从上面的几个小节可以看出，基础的三大操作中，向量的规模`_size`没有发挥任何作用。所以，如果只用来实现基础操作，列表是可以不记录这个属性的。但要做归并排序，就需要用到它了。
 
-您应当根据向量的归并排序自行写出列表的归并排序。在向量的对应小节讨论了归并排序的几个注意点（后面的题目1、2、3），在列表的场合同样需要注意到它。
+您应当根据向量的归并排序自行写出列表的归并排序。值得注意的是，在向量的场合，可以通过秩直接定位到“一段子向量”，但是在列表的场合，不能简单地通过首尾节点的位置，来定位“一段子列表”：因为<u>在归并的过程中，子列表的首尾节点的位置会发生变化</u>。
 
 ```c++
 // 算法2.16A
-template <typename T>              // 从s到t（不包含t）的n个节点进行排序
-void mergeSort(ListNode<T>* s, ListNode<T>* t, int n, function<bool(const T&, const T&)> cmp) {
+template <typename T>              // 从s开始到t（不包括t）n个节点进行排序，保证排序后s仍然指向起点
+void List<T>::mergeSort(ListNode<T>*& s, ListNode<T>* t, int n, function<bool(const T&, const T&)> cmp) {
     if (n <= 1) { return; }        // 递归边界
     int m = n / 2;                 // 取中点
     auto mid = s->forward(m);      // 取m次succ，找到列表的中点
-    mergeSort(s, mid, m);          // 递归地排序列表的前半部分
-    mergeSort(mid, t, n-m);        // 递归地排序列表的后半部分
+    mergeSort(s, mid, m, cmp);     // 递归地排序列表的前半部分
+    mergeSort(mid, t, n-m, cmp);   // 递归地排序列表的后半部分
+    auto sp = s->pred;             // 暂存s的直接前驱，用来在归并结束后将s复位到起点
     auto p = s, q = mid;           // p和q作为两部分的指针
-    while (p != mid && q != t) {
+    while (p != q && q != t) {     // 注意，前半部分用完的标志是p追上q而不是mid
         if (cmp(p->value, q->value)) {
             p = p->succ;           // 前半小，不动
         } else {
@@ -1262,11 +1265,13 @@ void mergeSort(ListNode<T>* s, ListNode<T>* t, int n, function<bool(const T&, co
             insertAsPred(e, p);    // 插入到p前面去
         }
     }
+    s = sp->succ;                  // 保证s仍然指向这一段列表的起点，否则递归返回之后mid会乱掉
 }
 
 template <typename T>
 void List<T>::mergeSort(function<bool(const T&, const T&)> cmp) {
-    mergeSort(_head->succ, _tail, _size, cmp);
+    ListNode<T>* start = _head->succ;
+    mergeSort(start, _tail, _size, cmp);
 }
 ```
 
@@ -1274,7 +1279,10 @@ void List<T>::mergeSort(function<bool(const T&, const T&)> cmp) {
 
 复杂度分析：
 
-* 尽管花了$\Theta(m)=\Theta(n)$的时间定位中点，但本来归并就需要$\Theta(n)$，所以时间复杂度和向量版本相同。当然常数远高于向量。
+* 尽管花了$\Theta(m)=\Theta(n)$的时间定位中点，但本来归并就需要$\Theta(n)$，所以时间复杂度和向量版本相同。当然，因为要定位中点，以及移动时需要`6`次赋值`remove`和`insert`的缘故，它的常数是远高于向量的。
+
+  > 您可以取`n`为一个较大的值（如$2^{20}$），分别运行向量和列表版本的归并排序。列表版本的用时会显著高于向量版本。
+
 * 因为列表的插入和删除都是在链子上做操作，没有对`value`的赋值，所以不需要考虑数据被覆盖的问题。因此，列表形式的空间复杂度是$\Theta(\log n)$，不需要辅助数组。
 
 在向量对应小节讨论的问题4、5，列表的场合也有类似的结论，您可以自己讨论它们。
@@ -1312,7 +1320,7 @@ private:
     const Rank _tail = 1;
     Vector<StaticListNode<T>> V;
 public:
-    StaticListNode<T>* get(Rank r) { return &V[r]; }
+    StaticListNode<T>* get(Rank r) const { return &V[r]; }
 };
 ```
 
@@ -1346,7 +1354,7 @@ StaticList<T>::StaticList() {
 
 ### 在静态链表上删除节点
 
-作为例子，下面展示静态链表删除节点的操作。最自然的想法是模仿动态链表的删除：**算法2.14A**设计算法。
+作为例子，下面展示静态链表删除节点的操作。最自然的想法是模仿动态链表的删除（**算法2.14A**）设计算法。
 
 ```c++
 // 问题2.16 - 静态链表删除节点
@@ -1491,7 +1499,7 @@ void ListList<T>::buildL1() {
 ```c++
 // 算法2.18A
 template <typename T>
-ListNode<T>* ListList<T>::operator[](Rank index) {
+ListNode<T>* ListList<T>::operator[](Rank index) const {
     auto p1 = L1[0], p2 = p1->succ;
     while (p2 != L1.tail() && p2.r <= index) {
         p2 = (p1 = p2)->succ;
@@ -1507,7 +1515,7 @@ ListNode<T>* ListList<T>::operator[](Rank index) {
 * 在列表上直接做循秩访问，时间复杂度是$\Theta(\min(r,n-r))=O(n)$，平均$\Theta(n)$。
 * 在分块表上做循秩访问（**算法2.18A**），如果分块表是严格按照平方根规则建立的，那么在一级表上查找的时间为$\Theta(\frac r{\lfloor\sqrt n\rfloor})=O(\frac n{\lfloor\sqrt n\rfloor})=O(\sqrt{n})$，在二级表上查找的时间为$\Theta(r\%\lfloor\sqrt n\rfloor)=O(\sqrt n)$，因此总体的时间复杂度是$O(\sqrt n)$，平均$\Theta(\sqrt n)$。
 
-如果加上从前向后和从后向前的判断，可以降低大约`1/2`的常数。
+如果加上从前向后和从后向前的判断，在一级表和二级表上可以各降低大约`1/2`的常数。
 
 ### 循秩插入和删除
 
@@ -1570,7 +1578,7 @@ void ListList<T>::insert(T e, Rank r) {
 // 要求：对索引表L1进行重构，以维持平方根规则近似成立
 ```
 
-设$k_1,k_2>1$是两个先验的比例阈值（为避免重构过于频繁，建议$k_1,k_2\ge 2$），当相邻索引节点指向的秩距离超过$k_1\sqrt n$的时候，对索引表进行**局部重构**（只需要处理这对相邻索引节点的问题）；当索引表的长度超过$k_2\sqrt n$的时候，对索引表进行**整体重构**（需要压缩整体的索引表）。
+设$k_1,k_2>1$是两个先验的比例阈值（为避免重构过于频繁，应取$k_1,k_2\ge 2$），当相邻索引节点指向的秩距离超过$k_1\sqrt n$的时候，对索引表进行**局部重构**（只需要处理这对相邻索引节点的问题）；当索引表的长度超过$k_2\sqrt n$的时候，对索引表进行**整体重构**（需要压缩整体的索引表）。
 
 **局部重构**：设`p1`和`p2`之间的距离超过了阈值。那么，需要对`p1`和`p2`指向的节点之间的二级表进行遍历，每隔$\sqrt n$，插入一个指向它的索引节点。
 

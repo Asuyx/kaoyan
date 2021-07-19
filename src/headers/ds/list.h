@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <functional>
+#include "vector.h"
 using namespace std;
 
 typedef int Rank;
@@ -44,14 +45,16 @@ private:
     ListNode<T>* _head; // 列表的头哨兵节点
     ListNode<T>* _tail; // 列表的尾哨兵节点
 public:
-    int size() { return _size; }
-    ListNode<T>* head() { return _head; }
-    ListNode<T>* tail() { return _tail; }
+    int size() const { return _size; }
+    ListNode<T>* head() const { return _head; }
+    ListNode<T>* tail() const { return _tail; }
 
     // ----------------------------------以下内容不在笔记正文中----------------------------
+    List(T* A, int n); // 利用数组生成列表
+    List(const Vector<T>& V); // 利用向量生成列表
     List(const List<T>& L); // 复制构造函数
 
-    void traverse(function<void(ListNode<T>*)> visit); // 遍历
+    void traverse(function<void(ListNode<T>*)> visit) const; // 遍历
 
     template <typename T1> friend ostream& operator<< (ostream& out, const List<T1>& L); // 使用cout方式打印
 
@@ -62,15 +65,17 @@ public:
 
     // -----------------------------------以下开始是示例代码的函数---------------------------
     List(); // 构造函数，生成空列表
-    ListNode<T>* operator[](Rank index); // "循秩访问"
+    ListNode<T>* operator[](Rank index) const; // "循秩访问"
     
-    void insertAsPred(ListNode<T>* p, T e); // 算法2.13 - 列表插入元素（前插）
-    void insertAsSucc(ListNode<T>* p, T e); // 算法2.13 - 列表插入元素（后插，正文中未给出）
+    void insertAsPred(T e, ListNode<T>* p); // 算法2.13 - 列表插入元素（前插）
+    void insertAsSucc(T e, ListNode<T>* p); // 算法2.13 - 列表插入元素（后插，正文中未给出）
     void remove(ListNode<T>* p); // 算法2.14 - 列表删除元素
-    ListNode<T>* find(T e); // 算法2.15 - 列表查找元素
+    ListNode<T>* find(T e) const; // 算法2.15 - 列表查找元素
     
     void mergeSort(function<bool(const T&, const T&)> cmp); // 算法2.16 - 归并排序
-
+    void mergeSort();
+private:
+    void mergeSort(ListNode<T>*& s, ListNode<T>* t, int n, function<bool(const T&, const T&)> cmp); // 归并排序的原型函数
 };
 
 template <typename T>
@@ -83,7 +88,7 @@ List<T>::List() {
 }
 
 template <typename T>
-ListNode<T>* List<T>::operator[](Rank index) {
+ListNode<T>* List<T>::operator[](Rank index) const {
     if (index <= _size / 2) {
         return _head->forward(index+1);
     } else {
@@ -93,7 +98,7 @@ ListNode<T>* List<T>::operator[](Rank index) {
 
 // 算法2.13A
 template <typename T>
-void List<T>::insertAsPred(ListNode<T>* p, T e) {
+void List<T>::insertAsPred(T e, ListNode<T>* p) {
     auto q = p->pred, x = new ListNode<T>();
     x->value = e;                   // 创建新节点
     x->pred = q; x->succ = p;       // 将新节点的链子挂在p和q之间
@@ -103,7 +108,7 @@ void List<T>::insertAsPred(ListNode<T>* p, T e) {
 
 // 算法2.13A2（后插，正文中未给出）
 template <typename T>
-void List<T>::insertAsSucc(ListNode<T>* p, T e) {
+void List<T>::insertAsSucc(T e, ListNode<T>* p) {
     auto q = p->succ, x = new ListNode<T>();
     x->value = e;                   // 创建新节点
     x->pred = p; x->succ = q;       // 将新节点的链子挂在p和q之间
@@ -114,7 +119,7 @@ void List<T>::insertAsSucc(ListNode<T>* p, T e) {
 #ifdef ALGORITHM_2_13_SINGLE
 // 算法2.13B（单链表前插）
 template <typename T>
-void List<T>::insertAsPred(ListNode<T>* p, T e) {
+void List<T>::insertAsPred(T e, ListNode<T>* p) {
     auto x = new ListNode<T>();
     x->value = p->value;            // 复制节点p
     x->succ = p->succ; p->succ = x; // 后插，复制得到的x当做被插节点
@@ -134,7 +139,7 @@ void List<T>::remove(ListNode<T>* p) {
 
 // 算法2.15A
 template <typename T>
-ListNode<T>* List<T>::find(T e) {
+ListNode<T>* List<T>::find(T e) const {
     for (auto p = _tail->pred; p != _head; p = p->pred) {
         if (p->value == e) { return p; } // 从后向前检索
     }
@@ -142,15 +147,16 @@ ListNode<T>* List<T>::find(T e) {
 }
 
 // 算法2.16A
-template <typename T>              // 从s到t（不包含t）的n个节点进行排序
-void mergeSort(ListNode<T>* s, ListNode<T>* t, int n, function<bool(const T&, const T&)> cmp) {
+template <typename T>              // 从s开始到t（不包括t）的n个节点进行排序，保证排序后s仍然指向起点
+void List<T>::mergeSort(ListNode<T>*& s, ListNode<T>* t, int n, function<bool(const T&, const T&)> cmp) {
     if (n <= 1) { return; }        // 递归边界
     int m = n / 2;                 // 取中点
     auto mid = s->forward(m);      // 取m次succ，找到列表的中点
-    mergeSort(s, mid, m);          // 递归地排序列表的前半部分
-    mergeSort(mid, t, n-m);        // 递归地排序列表的后半部分
+    mergeSort(s, mid, m, cmp);     // 递归地排序列表的前半部分
+    mergeSort(mid, t, n-m, cmp);   // 递归地排序列表的后半部分
+    auto sp = s->pred;             // 暂存s的直接前驱，用来在归并结束后将s复位到起点
     auto p = s, q = mid;           // p和q作为两部分的指针
-    while (p != mid && q != t) {
+    while (p != q && q != t) {     // 注意，前半部分用完的标志是p追上q而不是mid（mid可能会被置换到p前面去）
         if (cmp(p->value, q->value)) {
             p = p->succ;           // 前半小，不动
         } else {
@@ -160,14 +166,52 @@ void mergeSort(ListNode<T>* s, ListNode<T>* t, int n, function<bool(const T&, co
             insertAsPred(e, p);    // 插入到p前面去
         }
     }
+    s = sp->succ;                  // 保证s仍然指向这一段列表的起点，否则递归返回之后mid会乱掉
 }
 
 template <typename T>
 void List<T>::mergeSort(function<bool(const T&, const T&)> cmp) {
-    mergeSort(_head->succ, _tail, _size, cmp);
+    ListNode<T>* start = _head->succ;
+    mergeSort(start, _tail, _size, cmp);
+}
+
+template <typename T>
+void List<T>::mergeSort() {
+    mergeSort(less_equal<T>());
 }
 
 //  ----------------------------------以下内容不在笔记正文中----------------------------
+
+template <typename T>
+static pair<ListNode<T>*, ListNode<T>*> make_list(T* A, int n) {
+    auto head = new ListNode<T>();
+    auto p = head;
+    for (int i = 0; i < n; ++i) {
+        auto q = new ListNode<T>();
+        q->value = A[i];
+        q->pred = p; p->succ = q;
+        p = q;
+    }
+    auto tail = new ListNode<T>();
+    tail->pred = p; p->succ = tail;
+    return make_pair(head, tail);
+}
+
+template <typename T>
+List<T>::List(T* A, int n) {
+    _size = n;
+    auto pair = make_list(A, n);
+    _head = pair.first;
+    _tail = pair.second;
+}
+
+template <typename T>
+List<T>::List(const Vector<T>& V) {
+    _size = V.size();
+    auto pair = make_list(V.data(), V.size());
+    _head = pair.first;
+    _tail = pair.second;
+}
 
 template <typename T>
 List<T>::List(const List<T>& L) {
@@ -185,7 +229,7 @@ List<T>::List(const List<T>& L) {
 }
 
 template <typename T>
-void List<T>::traverse(function<void(ListNode<T>*)> visit) {
+void List<T>::traverse(function<void(ListNode<T>*)> visit) const {
     for (auto p = _head->succ; p != _tail; p = p->succ) {
         visit(p);
     }
@@ -195,7 +239,7 @@ template <typename T>
 ostream& operator<< (ostream& out, const List<T>& L)
 {
     out << "L(";
-    L.traverse([L](ListNode<T>* p) -> void {
+    L.traverse([&](ListNode<T>* p) -> void {
         if (p != L._head->succ) { out <<","; }
         out << p->value;
     });
@@ -204,12 +248,12 @@ ostream& operator<< (ostream& out, const List<T>& L)
 
 template <typename T>
 void List<T>::push_back(T e) {
-    insertAsPred(_tail, e);
+    insertAsPred(e, _tail);
 }
 
 template <typename T>
 void List<T>::push_front(T e) {
-    insertAsSucc(_head, e);
+    insertAsSucc(e, _head);
 }
 
 template <typename T>

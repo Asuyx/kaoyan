@@ -1,4 +1,6 @@
 // 一些常用的函数的定义
+// 这个文件的内容和《数据结构》的知识点无关
+// 仅用于示例代码的设计
 
 #ifndef UTILITY_H
 #define UTILITY_H
@@ -40,12 +42,25 @@ void reverse(T* A, int n) {
     }
 }
 
+// 返回函数f的执行时间
 double calculateTime(function<void()> f) {
     clock_t start, end;
     start = clock();
     f();
     end = clock();
     return (double)(end - start) / CLOCKS_PER_SEC;
+}
+
+// 分节展示
+void showSections(initializer_list<function<void()>> L) {
+    int sec_number = 1;
+    auto showSection = [&]() -> void {
+        cout << "======================SEC " << sec_number++ << "======================" << endl;
+    };
+    for (auto f : L) {
+        showSection();
+        f();
+    }
 }
 
 #endif
