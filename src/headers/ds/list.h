@@ -160,10 +160,11 @@ void List<T>::mergeSort(ListNode<T>*& s, ListNode<T>* t, int n, function<bool(co
         if (cmp(p->value, q->value)) {
             p = p->succ;           // 前半小，不动
         } else {
-            q = q->succ;           // 后半小，移到前面去
-            T e = q->pred->value;  // 被移动的节点
-            remove(q->pred);       // 从q的前面删除
-            insertAsPred(e, p);    // 插入到p前面去
+            auto t = q;
+            q = q->succ;           // 后半小，移到前面去，将t从q->pred移动到p->pred
+            (q->pred = t->pred)->succ = q;
+            (t->pred = p->pred)->succ = t;
+            t->succ = p; p->pred = t;
         }
     }
     s = sp->succ;                  // 保证s仍然指向这一段列表的起点，否则递归返回之后mid会乱掉

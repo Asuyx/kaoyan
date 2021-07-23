@@ -57,6 +57,8 @@ public:
     void push_back(T e); // 在尾部插入元素
     T pop_back();  // 删除尾部的元素
 
+    void resize(int size); // 修改规模
+
     // -----------------------------------以下开始是示例代码的函数---------------------------
     // 循秩访问
     T& operator[](Rank index) const {
@@ -413,6 +415,19 @@ T Vector<T>::pop_back() {
     T temp = _data[_size-1];
     remove(_size-1);
     return temp;
+}
+
+template <typename T>
+void Vector<T>::resize(int size) {
+    if (_size < size) { // 增加规模
+        if (size > _capacity) { expand([=](int m) -> int {
+            return max(size, default_expand_strategy(m));
+        }); }           // 如果需要扩容
+        _size = size;
+    } else if (_size > size) { // 减少规模
+        _size = size;
+        shrink();
+    }
 }
 
 #endif

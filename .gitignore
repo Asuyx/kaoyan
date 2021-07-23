@@ -3,6 +3,7 @@ __pycache__/
 
 config.txt
 
+*.temp.cpp
 *.gch
 *.pdf
 *.docx

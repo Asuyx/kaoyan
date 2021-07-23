@@ -1,31 +1,29 @@
-// 2.2 - 列表（动态列表）
-// 这一节的主要内容都在例2.8和例2.9中
-// 因为和向量比较相似，就不单独设计example了
+// 2.2 - 列表（静态列表）
 
 #include <iostream>
-#include "list.h"
+#include "static_list.h"
 using namespace std;
 
 int main() {
     srand(time(0));
     showSections({
         []() -> void { // 构造函数
-            auto L = List<int>(range(1, 8)); // 基于向量
+            auto L = StaticList<int>(range(1, 8)); // 基于向量
             cout << L << endl;
             auto L2 = L;                     // 复制构造函数
             cout << L2 << endl;
         },
         []() -> void { // 循秩访问
-            auto L = List<int>(range(1, 8, 2));
+            auto L = StaticList<int>(range(1, 8, 2));
             cout << "L    = " << L << endl;
-            cout << "L[2] = " << L[2]->value << endl;
-            L[2]->value = 8;
+            cout << "L[2] = " << L[2] << endl;
+            L[2] = 8;
             cout << "L[2] <- 8" << endl;
-            cout << "L[2] = " << L[2]->value << endl;
+            cout << "L[2] = " << L[2] << endl;
             cout << "L    = " << L << endl;
         },
         []() -> void { // push(pop)_back(front)
-            List<int> L;
+            StaticList<int> L;
             cout << "L    = " << L << endl;
             for (int i = 0; i < 3; ++i) {
                 L.push_back(i);
@@ -47,62 +45,71 @@ int main() {
             }
         },
         []() -> void { // 插入、删除、查找
-            List<int> L(range(1, 6));
+            StaticList<int> L(range(1, 6));
             cout << "L    = " << L << endl;
             for (int i = 4; i < 7; ++i) {
                 Rank r = rand() % L.size();
                 cout << "insert(" << i << " @ " << r << " as pred )" << endl;
-                L.insertAsPred(i, L[r]);
+                L.insertAsPred(i, L.forward(L.head(),r+1));
                 cout << "L    = " << L << endl;
             }
             for (int i = 5; i < 8; ++i) {
                 Rank r = rand() % L.size();
                 cout << "insert(" << i << " @ " << r << " as succ )" << endl;
-                L.insertAsSucc(i, L[r]);
+                L.insertAsSucc(i, L.forward(L.head(),r+1));
                 cout << "L    = " << L << endl;
             }
             for (int i = 3; i < 6; ++i) {
                 auto p = L.find(i);
                 cout << "find(" << i << ")" << endl;
-                cout << "context = " << "[" << p->pred->value << " - " << p->value << " - " << p->succ->value << "]" << endl;
+                cout << "context = " << "[" << L.get(L.getPred(p)) << " - " << L.get(p) << " - " << L.get(L.getSucc(p)) << "]" << endl;
             }
         },
         []() -> void { // 排序
             auto V = range(1, 17);
             V.shuffle();
-            List<int> L(V);
+            StaticList<int> L(V);
             cout << "L    = " << L << endl;
             L.mergeSort();
             cout << "     sorted" << endl;
             cout << "L    = " << L << endl;
             const int list_size = 1<<22;
             Vector<int> VL(list_size, list_size, [](Rank r) -> int {
-                return rand()*rand();
+                return rand();//*rand();
             });
             L = VL;
-            auto judgeSorted = [&L]() -> bool { // 验证列表是否有序
-                for (auto p = L[1]; p != L.tail(); p = p->succ) {
-                    if (p->pred->value > p->value) { return false; }
+            auto judgeSorted = [](const StaticList<int>& L) -> bool {
+                for (Rank r = L.getSucc(L.head()); r != L.tail(); r = L.getSucc(r)) { 
+                    if (L.get(L.getPred(r)) > L.get(r)) {
+                        return false;
+                    }
                 }
                 return true;
-            };
-            Vector<ListNode<int>*> pos;         // 直接生成的列表，相邻元素的内存地址是相邻的
-            L.traverse([&pos](ListNode<int>* p) -> void { // 这会导致它和向量一样能利用计算机的快速缓存机制
-                pos.push_back(p);                         // 所以需要用一个随机化的pos，将它的逻辑次序打乱
-            });
-            pos.shuffle();
-            L.head()->succ = pos[0];
-            L.tail()->pred = pos[list_size-1];
+            }; // 判断静态列表是否有序的函数
+            auto ranks = range(2, list_size+2);// 直接用向量V生成后，V的元素次序和L的元素次序是一样的
+            ranks.shuffle();                   // 因此，需要用一个辅助向量ranks，对V中的元素进行重排
+            L.getSucc(L.head()) = ranks[0];
+            L.getPred(L.tail()) = ranks[list_size-1];
             for (int i = 0; i < list_size; ++i) {
-                pos[i]->pred = i == 0 ? L.head() : pos[i-1];
-                pos[i]->succ = i == list_size - 1 ? L.tail() : pos[i+1];
+                L.getPred(ranks[i]) = i == 0 ? L.head() : ranks[i-1];
+                L.getSucc(ranks[i]) = i == list_size - 1 ? L.tail() : ranks[i+1];
             }
-            cout << "sorted? = " << judgeSorted() << endl;
-            auto t = calculateTime([&L]() -> void {
-                L.mergeSort();
+            auto testSort = [&](function<void(StaticList<int>&)> sortFunction) -> void {
+                StaticList<int> Ltest(L);
+                cout << "sorted? = " << judgeSorted(Ltest) << endl;
+                auto t = calculateTime([&]() -> void {
+                    sortFunction(Ltest);
+                });
+                cout << "sort t  = " << t << endl;
+                cout << "sorted? = " << judgeSorted(Ltest) << endl;     
+            };
+            testSort([](StaticList<int>& L) -> void {
+                L.mergeSort(); // 这里的时间和例2.8差不多
             });
-            cout << "sort t  = " << t << endl; // 注意这里的时间是显著高于例2.4里向量的排序时间的
-            cout << "sorted? = " << judgeSorted() << endl;
+            testSort([](StaticList<int>& L) -> void {
+                // 直接利用向量做排序，速度更快（接近例2.4的向量排序），但会损失稳定性（即相等元素的逻辑次序被打乱）
+                mergeSortDirectly<int>(L, less_equal<int>());
+            });
         }
     });
     return 0;

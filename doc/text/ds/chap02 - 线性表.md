@@ -1246,7 +1246,7 @@ ListNode<T>* List<T>::find(T e) const {
 
 ```c++
 // 算法2.16A
-template <typename T>              // 从s开始到t（不包括t）n个节点进行排序，保证排序后s仍然指向起点
+template <typename T>              // 从s开始到t（不包括t）的n个节点进行排序，保证排序后s仍指向起点
 void List<T>::mergeSort(ListNode<T>*& s, ListNode<T>* t, int n, function<bool(const T&, const T&)> cmp) {
     if (n <= 1) { return; }        // 递归边界
     int m = n / 2;                 // 取中点
@@ -1259,15 +1259,15 @@ void List<T>::mergeSort(ListNode<T>*& s, ListNode<T>* t, int n, function<bool(co
         if (cmp(p->value, q->value)) {
             p = p->succ;           // 前半小，不动
         } else {
-            q = q->succ;           // 后半小，移到前面去
-            T e = q->pred->value;  // 被移动的节点
-            remove(q->pred);       // 从q的前面删除
-            insertAsPred(e, p);    // 插入到p前面去
+            auto t = q;
+            q = q->succ;           // 后半小，移到前面去，将t从q->pred移动到p->pred
+            (q->pred = t->pred)->succ = q; // 这里不能用remove+insert，否则会浪费内存分配的时间
+            (t->pred = p->pred)->succ = t;
+            t->succ = p; p->pred = t;
         }
     }
     s = sp->succ;                  // 保证s仍然指向这一段列表的起点，否则递归返回之后mid会乱掉
 }
-
 template <typename T>
 void List<T>::mergeSort(function<bool(const T&, const T&)> cmp) {
     ListNode<T>* start = _head->succ;
@@ -1299,45 +1299,38 @@ void List<T>::mergeSort(function<bool(const T&, const T&)> cmp) {
 
 ### 列表的静态实现
 
-**静态链表**（static list）指的是基于数组实现的列表，在提前预知列表的规模上限的时候可以用到它。
+**静态链表**（static list）指的是基于数组实现的列表（相应地，之前介绍的基于指针实现的列表称为**动态链表**），在提前预知列表的规模上限的时候可以用到它。
 
 > 或者也可以基于向量实现，从而允许扩容。
 
 和常见的链式实现的列表相比，静态链表需要消耗更多的空间，所以它非常不常用，也几乎不会出现在初试中。但在复试上机的时候，由于动态分配内存可能会引起时间消耗上的不确定性，并且机试题目给定的空间几乎总是绰绰有余的，所以静态链表经常被用到。
 
-> 和普通的链式实现相比，基于数组的静态链表保证了列表中的节点在内存中的地址是连续的一整块，从而可以更好地利用硬件的高速缓存机制（见《组成原理》）加快访问速度。这对于机试是有一定价值的。
+> 在机试中，通常都会<u>给出规模的明确上界</u>，这给使用数组提供了遍历。您可以自己试验一下，当`n`非常大时，直接开规模为`n`的数组，需要的时间远小于连续`n`次分配单个元素的内存。
 >
 > 其他带“链”的结构，如后面几章讨论的二叉树，在机试中也经常基于数组去“静态实现”，不再赘述，留到《算法设计》里再进行讨论。
 
-单链/双链、线性/循环、链式/静态，这三对关系是相互独立的，可以组成`8`种不同结构的列表实现。在本节中需要介绍的是双链、线性、链式的列表，下面以双链、线性、静态的列表为例，介绍静态链表的实现方法。为了支持扩容，这里基于向量实现。
+单链/双链、线性/循环、动态/静态，这三对关系是相互独立的，可以组成`8`种不同结构的列表实现。在本节的前半部分，介绍的是双链、线性、动态的列表；接下来，则以双链、线性、静态的列表为例，介绍静态链表的实现方法。为了支持扩容，这里基于向量实现。
 
 ```c++
 template <typename T>
 class StaticList {
 private:
     int _size;
-    const Rank _head = 0;
-    const Rank _tail = 1;
-    Vector<StaticListNode<T>> V;
+    static const Rank _head = 0;
+    static const Rank _tail = 1;
+    Vector<T> V;    // 将value、pred和succ拆成三个向量
+    Vector<Rank> Vpred;
+    Vector<Rank> Vsucc;
 public:
-    StaticListNode<T>* get(Rank r) const { return &V[r]; }
+    T& get(Rank r) const { return V[r]; }
+    Rank& getPred(Rank r) const { return Vpred[r]; }
+    Rank& getSucc(Rank r) const { return Vsucc[r]; }
 };
 ```
 
 将所有的静态列表中的节点，都放在一个向量`V`里，并规定`V[0]`和`V[1]`分别是头部和尾部的哨兵。
 
-> `get`方法表示在`V`中循秩访问。因为列表中的元素次序和`V`中的元素次序并不相同，所以它的语义和直接对列表循秩访问`L[r]`是不同的。
-
-因为所有的节点都在向量`V`中，所以`StaticListNode`中不需要保存直接前驱和后继的<u>指针</u>，只需要保存直接前驱和后继在向量`V`的<u>秩</u>，就可以定位到直接前驱和后继的节点了。
-
-```c++
-template <typename T>
-struct StaticListNode { // 列表中的一个节点
-    T value;            // 本节点存放的数据
-    Rank pred;          // 直接前驱的秩
-    Rank succ;          // 直接后继的秩
-};
-```
+因为所有的节点都在向量中，所以不需要保存直接前驱和后继的<u>指针</u>，只需要在`Vpred`和`Vsucc`中保存直接前驱和后继在向量`V`的<u>秩</u>，就可以定位到直接前驱和后继的节点了。
 
 生成空列表时，需要初始化`2`个哨兵节点。
 
@@ -1345,33 +1338,36 @@ struct StaticListNode { // 列表中的一个节点
 template <typename T>
 StaticList<T>::StaticList() {
     _size = 0;
-    V.push_back(StaticListNode<T>());
-    V.push_back(StaticListNode<T>());
-    V[_head].succ = _tail; V[_head].pred = -1;
-    V[_tail].pred = _head; V[_tail].succ = -1;
+    V.resize(2); Vpred.resize(2); Vsucc.resize(2);
+    Vsucc[_head] = _tail; Vpred[_head] = -1;
+    Vpred[_tail] = _head; Vsucc[_tail] = -1;
 }
 ```
+
+> 这里`resize`函数表示改变`V._size`的值：如果扩大规模，则简单地扩大`_size`；如果缩小规模，则简单地减少`_size`，这也就意味着尾部的元素被丢弃了。
+>
+> 不考虑扩容、缩容的情况下，该函数只进行了对`V._size`赋值一项操作，效率比连续插入或删除元素要高得多。实现见配套代码。
 
 ### 在静态链表上删除节点
 
 作为例子，下面展示静态链表删除节点的操作。最自然的想法是模仿动态链表的删除（**算法2.14A**）设计算法。
 
 ```c++
-// 问题2.16 - 静态链表删除节点
+// 问题2.17 - 静态链表删除节点
 // 给定：列表L（静态，基于向量V）
 // 输入：待删除的元素的在向量V中的秩r
 // 要求：将V[r]从列表L中删除
 
-// 算法2.16A
+// 算法2.17A
 template <typename T>
 void StaticList<T>::remove(Rank r) {
-    V[V[r].pred].succ = V[r].succ;
-    V[V[r].succ].pred = V[r].pred; 
+    Vsucc[Vpred[r]] = Vsucc[r];        // 先执行列表中的删除
+    Vpred[Vsucc[r]] = Vpred[r]; 
     --_size;
 }
 ```
 
-在**算法2.16A**中存在一个问题：被删除的节点的内存无法被释放。
+在**算法2.17A**中存在一个问题：被删除的节点的内存无法被释放。
 
 > 因为被删除的节点在向量`V`中，所以不能直接用`delete`释放内存。
 
@@ -1384,21 +1380,33 @@ void StaticList<T>::remove(Rank r) {
 因为列表的元素次序和`V`中的元素次序无关，所以您可以很自然地想到，只需要将`V[r]`交换到`V[n-1]`，就可以顺利在$O(1)$的时间内删除了。
 
 ```c++
-// 算法2.16B
+// 算法2.17B
 template <typename T>
 void StaticList<T>::remove(Rank r) {
-    V[V[r].pred].succ = V[r].succ;     // 先执行列表中的删除
-    V[V[r].succ].pred = V[r].pred; 
-    --_size;
-    Rank last = V.size() -1;           // 再执行向量中的删除
-    V[r] = V[last];                    // 将V[last]移动到V[r]的位置上
-    V[V[last].pred] = r;               // 连接V[last]的链子转为连到V[r]上
-    V[V[last].succ] = r;
+    Vsucc[Vpred[r]] = Vsucc[r];        // 先执行列表中的删除
+    Vpred[Vsucc[r]] = Vpred[r]; 
+    --_size;                           // 算法2.16A到此为止
+    if (r != V.size()-1) {
+        Rank last = V.size() -1;           // 再执行向量中的删除
+        V[r] = V[last];                    // 将V[last]移动到V[r]的位置上
+        Vsucc[Vpred[last]] = r;            // 连接V[last]的链子转为连到V[r]上
+        Vpred[Vsucc[last]] = r;
+    }
     V.pop_back();                      // 删除V的最后一个节点
+    Vpred.pop_back();
+    Vsucc.pop_back();
 }
 ```
 
 对于元素次序不重要的向量结构，在执行删除时，将被删除的元素移动到向量末尾再删除，可以将删除操作的时间复杂度从$\Theta(n-r)$降低为$O(1)$，这是一个常用的技巧。在后面的章节中还会再次出现。
+
+> 这里需要注意一个问题。
+>
+> 在动态列表中，“位置”使用指向节点的指针描述的。删除一个节点时，如果仍有指向它的指针，那么这个指针会变成野指针（wild pointer），这是符合意义的。
+>
+> 在静态列表中，“位置”是用元素在向量`V`中的秩来描述的。但使用上述方案的情况下，删除一个节点时，如果仍有指向它的秩，那么这个指针会错误地指向一个其他的元素（即移动过来的`V[last]`）；另一方面，如果有原先指向`V[last]`的秩，那么删除一个节点时，这个秩会指向一个不存在的位置（如果之后`V`又加入了新的元素，则更加糟糕地会指向一个错误的位置）。
+>
+> 因此，采用**算法2.17B**进行删除是不安全的。但如果要追求安全性，那么就永远不能对列表进行重构；除非对“位置”进行封装，使用智能指针的方法进行管理，而这会引起空间上的巨大浪费和一定的时间效率损失：对于一个追求效率的基本数据结构来说，这是不合格的。
 
 ## 分块表
 

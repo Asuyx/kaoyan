@@ -6,7 +6,7 @@
 using namespace std;
 
 const int start_size = 20;       // 用于展示的向量长度
-const int long_size = 1<<20;     // 用于验证排序的向量长度
+const int long_size = 1<<22;     // 用于验证排序的向量长度
 
 int main() {
     srand(time(0));
