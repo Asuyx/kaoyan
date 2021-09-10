@@ -95,14 +95,14 @@ void StaticList<T>::insertAsSucc(T e, Rank r) {
     ++_size;                        // 更新列表规模
 }
 
-// 算法2.16B
+// 算法2.17B
 template <typename T>
 void StaticList<T>::remove(Rank r) {
     Vsucc[Vpred[r]] = Vsucc[r];        // 先执行列表中的删除
     Vpred[Vsucc[r]] = Vpred[r]; 
-    --_size;                           // 算法2.16A到此为止
-    if (r != V.size()-1) {
-        Rank last = V.size() -1;       // 再执行向量中的删除
+    --_size;                           // 算法2.17A到此为止
+    Rank last = V.size() -1;           // 再执行向量中的删除
+    if (r != last) {
         V[r] = V[last];                // 将V[last]移动到V[r]的位置上
         Vsucc[Vpred[last]] = r;        // 连接V[last]的链子转为连到V[r]上
         Vpred[Vsucc[last]] = r;
