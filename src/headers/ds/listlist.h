@@ -45,7 +45,7 @@ public:
     void remove(Rank r);      // 列表删除元素（正文中未给出）
 
 private:
-    void buildL1(); // 算法2.17 - 建立索引表
+    void buildL1(); // 建立索引表
     
     void localReconstruct(ListNode<IndexNode<T>>* p1); // 算法2.20A - 索引表局部重构
     void globalReconstruct(); // 算法2.20B - 索引表整体重构
@@ -57,7 +57,6 @@ ListList<T>::ListList(const List<T>& L) {
     buildL1();
 }
 
-// 算法2.17A
 template <typename T>
 void ListList<T>::buildL1() {
     int len = (int)floor(sqrt(L2.size()));     // 两个索引指针之间的间隔，同时也是索引指针的数量

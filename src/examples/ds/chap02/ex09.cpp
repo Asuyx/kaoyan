@@ -75,7 +75,7 @@ int main() {
             cout << "L    = " << L << endl;
             const int list_size = 1<<22;
             Vector<int> VL(list_size, list_size, [](Rank r) -> int {
-                return rand();//*rand();
+                return rand()*rand();
             });
             L = VL;
             auto judgeSorted = [](const StaticList<int>& L) -> bool {
@@ -107,7 +107,7 @@ int main() {
                 L.mergeSort(); // 这里的时间和例2.8差不多
             });
             testSort([](StaticList<int>& L) -> void {
-                // 直接利用向量做排序，速度更快（接近例2.4的向量排序），但会损失稳定性（即相等元素的逻辑次序被打乱）
+                // 直接利用向量做排序，速度更快，但会损失稳定性（即相等元素的逻辑次序被打乱）
                 mergeSortDirectly<int>(L, less_equal<int>());
             });
         }

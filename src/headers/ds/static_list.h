@@ -258,6 +258,11 @@ void StaticList<T>::mergeSort() {
     mergeSort(less_equal<T>());
 }
 
+// 这里展示了另一个排序静态列表的方式
+// 无视静态列表L中的内在逻辑次序，直接对它的数据向量L.V进行排序
+// 然后重新指定静态列表的前驱/后继指针
+// 由于无视了内在逻辑次序，因此相等的数据无法保持排序前的相对位置，即此种排序方法不具有稳定性。
+// 但它确实比上面实现的mergeSort要快，参见例2.9
 template <typename T>
 void mergeSortDirectly(StaticList<T>& L, function<bool(const T&, const T&)> cmp) {
     if (L._size == 0) { return; }
