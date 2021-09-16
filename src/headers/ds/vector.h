@@ -386,8 +386,7 @@ Vector<T>::Vector(const Vector<T>& V) {
 }
 
 template <typename T>
-ostream& operator<< (ostream& out, const Vector<T>& V)
-{
+ostream& operator<< (ostream& out, const Vector<T>& V) {
     out << "[";
     V.traverse([&](Rank r, const T& e) -> void {
         if (r > 0) { out <<","; }
