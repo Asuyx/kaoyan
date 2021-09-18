@@ -3,9 +3,7 @@
 // 有返回值的函数
 
 #include <iostream>
-#include <functional>
 #include <vector>
-#include "vector.h"
 #include "stack.h"
 using namespace std;
 
