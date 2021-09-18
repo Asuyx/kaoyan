@@ -52,7 +52,7 @@ public:
 
 从上图中不难发现，栈的最重要的性质是：<u>先入栈的元素后出栈，后入栈的元素先出栈</u>，简称为“**后进先出**”（**LIFO**, Last In First Out）。生活中有不少LIFO的例子，比如，桌子上一大摞书需要先搬开上面的才能拿下面的，这些现象被抽象化到计算机中处理就对应栈这种数据结构。
 
-和栈相关的题目，通常有两个命题方向：
+和栈相关的题目，通常有两个考点。
 
 1. 考察对栈性质（也就是LIFO）的理解。
 2. 在访问受限的情况下设计算法。这个比较少见。
@@ -121,7 +121,7 @@ $$
 $$
 f(n+1)=\sum_{k=0}^n f(k)f(n-k)
 $$
-使用生成函数法可以算出，这个递归方程具有解析解：
+使用生成函数法可以得到，这个递归方程可以解出显式的通项公式：
 $$
 f(n)=\frac{C_{2n}^n}{n+1}=\frac{(2n)!}{(n+1)!\cdot n!}
 $$
@@ -340,7 +340,7 @@ bool isLegal(string seq) {
 int SuffixExpression::getResult() const {
     Stack<int> S;                               // 计算使用的辅助栈
     traverse([&](Rank, const ExpressionElement& e) -> void {
-        int opCount = e.operationNumberCount(); // 获取运算符所需的操作数数量
+        int opCount = e.operationNumberCount(); // 获取运算符所需的操作数数量，操作数此值为0
         S.push(e.apply(Vector<int>(opCount, opCount, [&](int) -> int {
             return S.pop();                     // 进行opCount次pop
         })));                                   // 运算后push回去
@@ -404,7 +404,7 @@ void iterativeFunction(ParameterType para) {    // 迭代版本的函数模板
             basicProcedure(para);               // 程序体
             for (int i = dependentParameters.size() - 1; i >= 0; --i) {
                 S.push(dependentParameters[i](para));
-            }                                   // 尾递归改为入栈
+            }                                   // 尾递归改为入栈，注意需要倒序入栈
         }
     }
 }
@@ -464,28 +464,80 @@ void f2() {
 
 这类函数的模板如下。
 
-
-
-其中，`summarize`这个函数用来处理各个返回值，将其经过一定的规则计算之后，输出为整体函数的返回值。
-
-
-
-情况3：特殊情况。上面两种情况是比较通用的尾递归消除办法；除此之外，还有一些尾递归不需要使用栈就能够解决，下面举了一个例子。
-
 ```c++
-//
-// 输入：非负整数n
-// 输出：Fibonacci数列的第n项
-//      Fibonacci数列由F[0] = F[1] = 1和F[n] = F[n-1] + F[n-2]递归定义。
+ReturnType recursiveFunction(ParameterType para) {  // 递归版本的函数模板
+    if (recursiveBorder(para)) {                    // 判断是否到达递归边界
+        return borderValue(para);                   // 递归边界的返回值
+    } else {
+        basicProcedure(para);                       // 程序体
+        return summarizeFunction(dependentParameters.changeAll(
+            [&](GenerateFunction f) -> ReturnType { 
+                return recursiveFunction(f(para));  // 尾递归
+            }
+        ));                                         // 将递归的返回值综合起来
+    }
+}
 ```
 
+这类函数并不是那么“严格”的尾递归。因为在得到各个递归实例的返回值之后，还需要一个`summarize`函数，把这些返回值综合起来，得到一个最终的返回值。这个`summarize`可能特别复杂，以至于可以和`basicProcedure`分庭抗礼，这种情况下“尾递归”的“尾”就完全无从谈起。
 
+> 这种“首尾递归”的迭代版本也是存在的，并且是一个难点。在下一章，笔者将利用树去实现它。
 
+不过，当`summarize`函数比较简单的时候，可以利用上一小节的模板加以改写，从而实现从递归版本到迭代版本的转换。
 
+```c++
+// 输入：非负整数m，n，其中n <= m
+// 输出：组合数C(m, n)
+int combine1(int m, int n) {
+    if (n == 0 || n == m) {                        // 递归边界
+        return 1;
+    }
+    return combine1(m-1, n-1) + combine1(m-1, n);  // 递归公式
+}
+```
 
+它的迭代形式可以像下面这样写。
 
+```c++
+int combine2(int m, int n) {
+    Stack<pair<int, int>> S;         // 只存储(m,n)
+    int sum = 0;                     // 存储目前为止累加的结果
+    S.push(make_pair(m, n));         // 将初始的(m,n)加入到栈中                    
+    while (!S.empty()) {
+        auto P = S.pop();
+        m = P.first, n = P.second;
+        if (n == 0 || n == m) {
+            ++sum;                   // 只在递归边界上累加
+        } else {                     // 不在递归边界上，入栈
+            S.push(make_pair(m-1, n));
+            S.push(make_pair(m-1, n-1));
+        }
+    }
+    return sum;
+}
+```
 
+这里的`summarize`函数是简单的加法，而加法遵守结合律。
 
+> 因为递归边界上的所有值都是`1`，而计算组合数的过程只包含加法；所以展开所有递归之后，计算组合数的表达式，是由若干个`1`、`+`以及括号组成的。由于加法遵守结合律，所以所有的括号都可以被去掉。
+>
+> 因此，没有必要算出递归过程中各个组合数的具体数值，只需要用一个累加器，在所有的递归边界上累加即可。
+>
+> 从这个角度，容易推导出算法复杂度是$\Theta(C_m^n)$​的，这个复杂度相当高。可以通过将递归改写成递推来降低复杂度到$O(mn)$​。用递推消除尾递归不属于《数据结构》的考试范围，将在《算法设计》中简要介绍。
+
+### 扩展栈的功能
+
+上面介绍了栈的三大类应用：出栈序列、表达式和尾递归；这些应用占据了大多数的栈的考题。在栈的应用之外，另一种命题方式，就是在LIFO的限制下，设计算法扩展栈的功能。
+
+在这一小节举一个此类题目的例子：设计一个栈，在`push`、`top`和`pop`之外，还要求支持`getMax`，用来读取栈中的最大值。
+
+## 队列
+
+和栈相比，队列就要简单的多。栈是一个**后进先出**（**LIFO**）的数据结构，而**队列**（queue）是一个**先进先出**（**FIFO**，First In First Out）的数据结构。栈有一个不可操作的盲端，而插入、删除、访问三种操作都在自由端；而队列的两端都可以操作，但只能从其中一端插入，而只能从另一端删除或访问。允许删除（**出队**，dequeue）或访问的一端称为**队头**或**队首**（front），允许插入（**入队**，enqueue）的一端称为**队尾**（rear）。
+
+从“队列”这个名字就可以看出来，它非常适合用来模拟奶茶店窗口前排队这样的场景。新过来买奶茶的人，总是会排到队伍的末尾；而只有队伍最前面的人可以买到奶茶，并在买到以后心满意足地离开队伍。
+
+和栈一样，队列也可以用桶式图来分析，只不过队列用的是漏桶：
 
 
 

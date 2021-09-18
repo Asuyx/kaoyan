@@ -1,13 +1,15 @@
 // 3.1 - 栈
 // 尾递归消除的情况1
+// 无返回值的函数
 
 #include <iostream>
 #include <functional>
+#include <vector>
 #include "vector.h"
 #include "stack.h"
 using namespace std;
 
-// 情况1的模板
+// 模板
 template <typename ParameterType>
 class TailRecursion {
 public:
@@ -49,9 +51,13 @@ public:
 //      它的4个数位均为1、2、3或4
 //      输出顺序为从小到大的次序
 
+// 为了方便对比，首先输出到向量里而不是直接输出到cout
+Vector<Vector<int>> answerVectors;
+Vector<int>* answerVectorPointer;
+
 void f1(int x = 0) {
     if (x > 1000) {           // 4位数，输出
-        cout << x << endl;
+        answerVectorPointer->push_back(x);
     } else {
         for (int i = 1; i < 5; ++i) {
             f1(x*10 + i);     // 枚举可能的下一位
@@ -65,7 +71,7 @@ void f2() {
     while (!S.empty()) {
         x = S.pop();
         if (x > 1000) {          // 4位数，输出
-            cout << x << endl;
+            answerVectorPointer->push_back(x);
         } else {
             for (int i = 4; i > 0; --i) {
                 S.push(x*10 + i); // 枚举可能的下一位
@@ -77,18 +83,34 @@ void f2() {
 int main() {
     TailRecursion<int> TR;
     TR.basicProcedure = ([](int) -> void {});
-    TR.borderProcedure = ([&](int x) -> void { cout << x << endl; });
+    TR.borderProcedure = ([&](int x) -> void { answerVectorPointer->push_back(x); });
     TR.recursiveBorder = ([](int x) -> bool { return x > 1000; });
     TR.dependentParameters = Vector<TailRecursion<int>::GenerateFunction>(
         4, 4, [](int y) -> TailRecursion<int>::GenerateFunction {
             return [=](int x) -> int { return x*10 + y + 1; };
         }
     );
-    showSections({
+    vector<function<void()>> functionVersions = {
         []() -> void { f1(); },   // 直接的递归版本
         []() -> void { f2(); },   // 直接的迭代版本
         [&]() -> void { TR.recursiveFunction(0); }, // 使用模板的递归版本
         [&]() -> void { TR.iterativeFunction(0); }  // 使用模板的迭代版本
-    });
+    };
+    for (int i = 0; i < 4; ++i) { // 分别运行4种版本的函数，输出到向量里
+        answerVectorPointer = &answerVectors[i];
+        functionVersions[i]();
+    }
+    // 将各个版本的函数的运行结果，按照列输出
+    bool allEqual = true;
+    for (int i = 0; i < answerVectorPointer->size(); ++i) {
+        for (int j = 0; j < 4; ++j) {
+            cout << answerVectors[j][i] << "\t";
+            if (answerVectors[j][i] != answerVectors[0][i]) {
+                allEqual = false;
+            }
+        }
+        cout << endl;
+    }
+    cout << "All Equal = " << allEqual << endl;
     return 0;
 }

@@ -58,6 +58,11 @@ public:
     T pop_back();  // 删除尾部的元素
 
     void resize(int size); // 修改规模
+    template <typename T1> Vector<T1> changeAll(function<T1(T)> f) {
+        return Vector<T1>(_capacity, _size, [&](int i) -> T1 {
+            return f(_data[i]);
+        });
+    }
 
     // -----------------------------------以下开始是示例代码的函数---------------------------
     // 循秩访问
