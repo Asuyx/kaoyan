@@ -7,10 +7,21 @@
 #include "vector.h"
 using namespace std;
 
+#ifdef STACK_OF_LIST
+#include "list.h"
+template <typename T>
+class Stack : protected List<T> {
+public:
+    T& top() const { return List<T>::tail()->pred->value; }
+    void push(T e) { List<T>::push_back(e); }
+    T pop() { return List<T>::pop_back(); }
+};
+#endif
+
 template <typename T>
 class Stack : protected Vector<T> { // 利用protected继承做访问限制
 public:
-    T top() const { return Vector<T>::data()[Vector<T>::size()-1]; }
+    T& top() const { return Vector<T>::data()[Vector<T>::size()-1]; }
     void push(T e) { Vector<T>::push_back(e); }
     T pop() { return Vector<T>::pop_back(); }
 
