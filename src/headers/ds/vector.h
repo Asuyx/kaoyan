@@ -56,6 +56,7 @@ public:
 
     void push_back(T e); // 在尾部插入元素
     T pop_back();  // 删除尾部的元素
+    T& back() const { return _data[_size-1]; } // 获取尾部的元素
 
     void resize(int size); // 修改规模
     template <typename T1> Vector<T1> changeAll(function<T1(T)> f) {
