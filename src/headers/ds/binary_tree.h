@@ -7,6 +7,8 @@
 
 #include <iostream>
 #include <functional>
+#include "stack.h"
+#include "queue.h"
 using namespace std;
 
 template <typename T>
@@ -43,8 +45,14 @@ public:
     void preorderTraverse(function<void(const BTNode<T>*&)> visit) const; // 先序遍历
     void inorderTraverse(function<void(const BTNode<T>*&)> visit) const; // 中序遍历
     void postorderTraverse(function<void(const BTNode<T>*&)> visit) const; // 后序遍历
+    void levelTraverse(function<void(const BTNode<T>*&)> visit) const; // 层次遍历
+
+protected:
+    BTNode<T>* preorderSucc(BTNode<T>* p) const; // 先序序列的直接后继
+    void preorderTraverseWithSucc(function<void(const BTNode<T>*&)> visit) const; // 使用直接后继做先序遍历
 
     // -----------------------------------以下内容不在笔记正文中----------------------------
+public:
     BinaryTree(BTNode<T>* _root) : _root(_root) {} // 用于生成子树
     void updateSize();
     bool operator==(const BinaryTree<T>& other) const;
@@ -143,6 +151,36 @@ void BinaryTree<T>::postorderTraverse(function<void(const BTNode<T>*&)> visit) c
         visit(node);            // 访问树根
     };
     traverse(_root);            // 从整棵树的树根开始遍历
+}
+
+// 算法 - 先序遍历后继
+template<typename T>
+BTNode<T>* BinaryTree<T>::preorderSucc(BTNode<T>* p) const {
+    if (p->lc != nullptr) { return p->lc; } // 有左子取左子
+    if (p->rc != nullptr) { return p->rc; } // 无左有右取右子
+    while (p->parent != nullptr) {
+        if (p->isLeftChild() && p->parent->rc != nullptr) {
+            return p->parent->rc;           // 有右姊妹则取右姊妹
+        } else {
+            p = p->parent;                  // 无右姊妹继续向上回溯
+        }
+    }
+    return nullptr;                         // 回溯到树根仍然没有右姊妹，结束
+}
+
+// 算法 - 层次遍历
+template <typename T>
+void BinaryTree<T>::levelTraverse(function<void(const BTNode<T>*&)> visit) const {
+    Queue<BTNode<T>*&> Q;
+    Q.enqueue(_root);         // 从树根开始遍历
+    while (!Q.empty()) {
+        auto f = Q.dequeue(); // 取出队列中的队首元素
+        if (f != nullptr) {   // 如果非空
+            visit(f);         // 则对其进行访问
+            Q.enqueue(f->lc); // 并将其左右子代依次入队
+            Q.enqueue(f->rc);
+        }
+    }
 }
 
 // -------------------------------以下内容不在笔记正文中------------------------------------------------
