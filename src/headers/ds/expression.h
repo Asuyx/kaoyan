@@ -202,11 +202,20 @@ ExpressionTree::ExpressionTree(const SuffixExpression& exp) {
     _size = exp.size();                         // 树的规模和后缀表达式长度相等
 }
 
+// 算法4.6 - 表达式树的计算
 int ExpressionTree::getResult() const {
     Stack<int> S;                               // 用于计算结果的辅助栈
     postorderTraverse([&](const BTNode<ExpressionElement>* v) -> void {
-
+        if (v->value.isNumber()) {
+            S.push(v->value.getNumber());       // 如果是运算数，直接加入到栈中
+        } else {
+            int opCount = v->value.operationNumberCount();
+            S.push(v->value.apply(Vector<int>(opCount, opCount, [&](int) -> int {
+                return S.pop();
+            })));                               // 否则取元素计算之后压回栈
+        }
     });
+    return S.pop();
 }
 
 // 中缀表达式转换为表达式树
