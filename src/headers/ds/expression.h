@@ -178,7 +178,7 @@ int SuffixExpression::getResult() const {
 
 class ExpressionTree : public BinaryTree<ExpressionElement> {
 public:
-    int getResult() const;
+    int getResult();
     ExpressionTree(const InfixExpression& exp);
     ExpressionTree(const SuffixExpression& exp);
 };
@@ -199,13 +199,12 @@ ExpressionTree::ExpressionTree(const SuffixExpression& exp) {
         S.push(v);                              // 组合成子树，push回去
     });
     _root = S.pop();                            // 最后剩下的就是整个表达式树的根
-    _size = exp.size();                         // 树的规模和后缀表达式长度相等
 }
 
 // 算法4.6 - 表达式树的计算
-int ExpressionTree::getResult() const {
+int ExpressionTree::getResult() {
     Stack<int> S;                               // 用于计算结果的辅助栈
-    postorderTraverse([&](const BTNode<ExpressionElement>* v) -> void {
+    postorderTraverse([&](BTNode<ExpressionElement>* v) -> void {
         if (v->value.isNumber()) {
             S.push(v->value.getNumber());       // 如果是运算数，直接加入到栈中
         } else {
