@@ -41,7 +41,7 @@ public:
     static void preorderTraverse(function<void(BTNode<T>*)> visit, BTNode<T>* node); // 先序遍历
     static void inorderTraverse(function<void(BTNode<T>*)> visit, BTNode<T>* node); // 中序遍历
     static void postorderTraverse(function<void(BTNode<T>*)> visit, BTNode<T>* node); // 后序遍历
-    static void levelTraverse(function<void(BTNode<T>*)> visit, BTNode<T>* node); // 层次遍历
+    static void levelorderTraverse(function<void(BTNode<T>*)> visit, BTNode<T>* node); // 层次遍历
 
 private:
     void preorderTraverseStack(function<void(BTNode<T>*)> visit); // 先序遍历（无递归）
@@ -314,9 +314,9 @@ void BinaryTree<T>::preorderTraverseSucc(function<void(BTNode<T>*)> visit) {
     }
 }
 
-// 算法 - 层次遍历
+// 算法4.3DS - 层次遍历
 template <typename T>
-void BinaryTree<T>::levelTraverse(function<void(BTNode<T>*)> visit, BTNode<T>* node) {
+void BinaryTree<T>::levelorderTraverse(function<void(BTNode<T>*)> visit, BTNode<T>* node) {
     Queue<BTNode<T>*> Q;
     Q.enqueue(node);         // 从树根开始遍历
     while (!Q.empty()) {
@@ -382,7 +382,7 @@ ostream& operator<< (ostream& out, const BinaryTree<T>& T)
     out << "T(";
     if (T.size() > 0) {
         out << T.root()->value;
-        T.levelTraverse([&](const BTNode<T>*& node) -> void {
+        T.levelorderTraverse([&](const BTNode<T>*& node) -> void {
             out << "," << (node->lc != nullptr ? node->lc->value : '^');
             out << "," << (node->rc != nullptr ? node->rc->value : '^');
         });
