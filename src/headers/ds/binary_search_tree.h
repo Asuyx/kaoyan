@@ -13,7 +13,22 @@ public:
     BinarySearchTree(function<bool(const T&, const T&)> _cmp) : _cmp(_cmp) {}
     bool cmp(const T& a, const T& b) { return _cmp(a, b); }
     void insert(T e);
+    BTNode<T>* find(T e) const;
 };
+
+template <typename T>
+BTNode<T>* BinarySearchTree<T>::find(T e) const {
+    BTNode<T>* pos = root();            // 从树根开始遍历
+    while (pos != nullptr) { 
+        if (pos->value == e) { break; } // 查找成功
+        if (cmp(pos->value, e)) {       // 根据大小关系决定查找方向
+            pos = pos->rc;
+        } else {
+            pos = pos->lc;
+        }
+    }
+    return pos;
+}
 
 template <typename T>
 void BinarySearchTree<T>::insert(T e) {

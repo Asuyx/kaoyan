@@ -59,6 +59,8 @@ protected:
     static BTNode<T>* postorderSucc(BTNode<T>* node); // 后序序列的直接后继
     static BTNode<T>* postorderPred(BTNode<T>* node); // 后序序列的直接前驱
 
+    static Vector<BTNode<T>*> preorderEnhancedSeq(BTNode<T>* node); // 先序增强序列
+
     // -----------------------------------以下内容不在笔记正文中----------------------------
 public:
     BinaryTree(BTNode<T>* _root) : _root(_root) {} // 生成指定根的树
@@ -327,6 +329,24 @@ void BinaryTree<T>::levelorderTraverse(function<void(BTNode<T>*)> visit, BTNode<
             Q.enqueue(f->rc);
         }
     }
+}
+
+// 算法4.11 - 构造增强序列
+template <typename T>
+Vector<BTNode<T>*> preorderEnhancedSeq(BTNode<T>* node) {
+    Vector<BTNode<T>*> V;
+    function<void(BTNode<T>*)> preorderEnhanced;
+    preorderEnhanced = [&V](BTNode<T>* node) -> void {
+        if (node == nullptr) {
+            V.push_back(nullptr); // 和普通先序遍历的区别，外部节点也被加入
+        } else {
+            V.push_back(node);
+            preorderEnhanced(node->lc);
+            preorderEnhanced(node->rc);
+        }
+    };
+    preorderEnhanced(node);
+    return V;
 }
 
 // -------------------------------以下内容不在笔记正文中------------------------------------------------

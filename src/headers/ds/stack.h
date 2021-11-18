@@ -18,6 +18,8 @@ public:
 };
 #endif
 
+enum class StackOpeation { push, pop };
+
 template <typename T>
 class Stack : protected Vector<T> { // 利用protected继承做访问限制
 public:
@@ -40,5 +42,21 @@ ostream& operator<< (ostream& out, const Stack<T>& V)
     });
     out << ">";
 }
+
+// 算法3.6 - 随机操作序列
+Vector<StackOpeation> randomOperationSequence(int n) {
+    int p = n, q = n;
+    Vector<StackOpeation> V;           // 待返回的操作序列
+    for (int i = 0; i < n * 2; ++i) {  // 逐个生成
+        int r = rand() % ((p+q) * (q-p+1));
+        if (r < p * (q-p+2)) {         // 通过概率计算
+            V.push_back(StackOpeation::push); --p;
+        } else {
+            V.push_back(StackOpeation::pop); --q;
+        }
+    }
+    return V;
+}
+
 
 #endif

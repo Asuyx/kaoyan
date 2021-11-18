@@ -1376,6 +1376,33 @@ void BinaryTree<T>::levelorderTraverse(function<void(BTNode<T>*)> visit, BTNode<
 
 ![增强序列](../../pic/ds/增强序列.png)
 
+求一个二叉树的增强序列，并不需要实际地为二叉树添加`n+1`个外部节点将其扩展为`T'`。下面展示了一个先序增强序列的例子（外部节点以`nullptr`形式给出）。
+
+```c++
+// 算法4.11 - 求增强序列
+// 给定：二叉树T
+// 输出：二叉树的先序增强序列
+//      其中原树节点以节点形式给出，外部节点以nullptr形式给出
+
+// 算法4.11 - 构造增强序列
+template <typename T>
+Vector<BTNode<T>*> preorderEnhancedSeq(BTNode<T>* node) {
+    Vector<BTNode<T>*> V;
+    function<void(BTNode<T>*)> preorderEnhanced;
+    preorderEnhanced = [&V](BTNode<T>* node) -> void {
+        if (node == nullptr) {
+            V.push_back(nullptr); // 和普通先序遍历的区别，外部节点也被加入
+        } else {
+            V.push_back(node);
+            preorderEnhanced(node->lc);
+            preorderEnhanced(node->rc);
+        }
+    };
+    preorderEnhanced(node);
+    return V;
+}
+```
+
 您可以发现，**增强的中序序列**恰好是原中序序列和`^`交替的形式，因此外部节点确实包含了中序序列的位置信息。
 
 > 在`T'`上，每一个内部节点都必然有右子，所以每一个内部节点的直接后继，都是它右子的最左侧通路终点。因为`T'`是真二叉树，所以没有左子的最左侧通路终点，必然也没有右子，从而是`T'`上的叶子节点，也就是一个外部节点。
@@ -1392,9 +1419,9 @@ void BinaryTree<T>::levelorderTraverse(function<void(BTNode<T>*)> visit, BTNode<
 
 > 在介绍表达式树的时候讨论过，一个长度为`2n`的栈操作序列可以唯一对应一棵规模为`n`的无标号二叉树，配合一个长度为`n`的入栈序列，就可以得到二叉树的先序序列（或出栈序列得到后序序列），从而为这棵二叉树标号。
 >
-> 讨论<u>增强的先序序列</u>。这个序列的最后一个元素显然是`^`，去掉这个元素，剩余`2n`个元素中，`^`表示`pop`，非`^`的内部节点则表示`push`，就可以得到一个操作序列。（请您在不翻阅表达式树那一小节的证明的情况下，自己证明这一结论）
+> 讨论<u>增强的先序序列</u>。这个序列的第一个元素显然是`^`，去掉这个元素，剩余`2n`个元素中，`^`表示`pop`，非`^`的内部节点则表示`push`，就可以得到一个操作序列。（请您在不翻阅表达式树那一小节的证明的情况下，自己证明这一结论）
 >
-> 那么，这个操作序列就可以唯一确定二叉树`T`的结构。再结合先序序列，就可以为`T`进行标号。
+> 那么，这个操作序列就可以唯一确定二叉树`T`的结构（参考**算法4.5**）。再结合先序序列，就可以为`T`进行标号。
 >
 > 增强的后序序列情况类似，请您自己证明。
 >
